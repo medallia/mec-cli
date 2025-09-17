@@ -3,7 +3,7 @@ import FormData from 'form-data';
 
 import { log } from '../../../utils';
 import { ValidationError, NetworkError, CLIError } from '../../../utils/errors';
-import { FileSystemAdapter, FileValidator } from '../../adapters/fs';
+import { FileSystemAdapter, FileValidator, PathUtils } from '../../adapters/fs';
 import { HttpClient } from '../../adapters/http';
 import { API_DEFAULTS, EMOJIS, ERROR_CODES, FILE_EXTENSIONS } from '../../config';
 import { Profile } from '../../config/types';
@@ -520,7 +520,7 @@ export class TranslationsService extends BaseService {
       const originalFileName = FileValidator.sanitizeFilename(
         filePath.split('/').pop() || 'translations.xlsx'
       );
-      const originalFileNameWithoutExtension = originalFileName.replace(/\.[^/.]+$/, '');
+      const originalFileNameWithoutExtension = PathUtils.getFileNameWithoutExtension(originalFileName);
       const processedFileName = `${originalFileNameWithoutExtension}-${FILE_PROCESSING.PROCESSED_TRANSLATIONS_SUFFIX}.xlsx`;
 
       const outputFilePath = isDebugEnabled

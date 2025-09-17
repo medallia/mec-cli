@@ -93,35 +93,10 @@ export class PathUtils {
   }
 
   /**
-   * Create a timestamped filename
-   */
-  static createTimestampedFileName(baseName: string, extension: string): string {
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}/, '');
-    return `${baseName}-${timestamp}${extension}`;
-  }
-
-  /**
    * Ensure output directory exists for a file path
    */
   static async ensureOutputDirectory(filePath: string): Promise<void> {
     const dirPath = this.getDirectoryName(filePath);
     await this.ensureDirectory(dirPath);
-  }
-
-  /**
-   * Get relative path from config directory
-   */
-  static getRelativeFromConfig(filePath: string): string {
-    return path.relative(this.getConfigDirectory(), filePath);
-  }
-
-  /**
-   * Normalize path separators for current OS
-   */
-  static normalize(filePath: string): string {
-    return path.normalize(filePath);
   }
 }

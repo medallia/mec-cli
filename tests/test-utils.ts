@@ -5,7 +5,7 @@
  * Tests for helper functions and utilities
  */
 
-import { formatBytes, formatDuration, deepMerge, maskSecret } from '../src/utils/helpers';
+import { maskSecret } from '../src/utils/helpers';
 
 interface TestResult {
   name: string;
@@ -28,26 +28,6 @@ class UtilityTester {
   private async testHelperFunctions(): Promise<void> {
     console.log('\n🔧 Testing Helper Functions...');
 
-    await this.runTest('formatBytes function', async () => {
-      const result1 = formatBytes(1024);
-      const result2 = formatBytes(1024 * 1024);
-      const result3 = formatBytes(0);
-      
-      if (result1 !== '1 KB' || result2 !== '1 MB' || result3 !== '0 Bytes') {
-        throw new Error(`formatBytes failed: ${result1}, ${result2}, ${result3}`);
-      }
-    });
-
-    await this.runTest('formatDuration function', async () => {
-      const result1 = formatDuration(1000);  // 1 second
-      const result2 = formatDuration(60000); // 1 minute
-      const result3 = formatDuration(3661000); // 1 hour, 1 minute, 1 second
-      
-      if (result1 !== '1s' || result2 !== '1m 0s' || result3 !== '1h 1m 1s') {
-        throw new Error(`formatDuration failed: ${result1}, ${result2}, ${result3}`);
-      }
-    });
-
     await this.runTest('maskSecret function', async () => {
       const result1 = maskSecret('short');
       const result2 = maskSecret('this-is-a-long-secret-value');
@@ -58,15 +38,6 @@ class UtilityTester {
       }
     });
 
-    await this.runTest('deepMerge function', async () => {
-      const target = { a: 1, b: { c: 2 } };
-      const source = { b: { c: 4 } };
-      const result = deepMerge(target, source);
-      
-      if (result.a !== 1 || result.b.c !== 4) {
-        throw new Error(`deepMerge failed: ${JSON.stringify(result)}`);
-      }
-    });
   }
 
   private async runTest(name: string, testFn: () => Promise<void>): Promise<void> {
