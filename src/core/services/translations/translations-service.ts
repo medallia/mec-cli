@@ -391,7 +391,6 @@ export class TranslationsService extends BaseService {
     // Matches variable patterns like [=variable_name], [=e_firstname:html], [=e_firstname:John:html], etc.
     const variableRegex = /\[=[^\s\]]+[^\]]*\]/g;
 
-   
     return variableRegex.test(text);
   }
 
