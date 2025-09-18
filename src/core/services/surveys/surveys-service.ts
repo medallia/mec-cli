@@ -263,7 +263,7 @@ export class SurveysService extends BaseService {
 
     // Helper to get element type name
     const getElementTypeName = (type: string | undefined): string => {
-      switch (type) {
+      switch (type?.toLowerCase()) {
         case 'text':
           return 'Text Block';
         case 'html':
@@ -310,11 +310,18 @@ export class SurveysService extends BaseService {
       const position = (container.position ?? 0) + 1;
 
       // Root level page is identified when type == "section" AND container.id == "model"
-      if (container.type === 'section' && container.container?.id === 'model') {
+      if (
+        container.type?.toLowerCase() === 'section' &&
+        container.container?.id?.toLowerCase() === 'model'
+      ) {
         let pageName = `Page ${String(position).padStart(2, '0')}`;
 
         // Add meaningful name if available
-        if (container.name?.trim() && container.name !== 'Page' && container.name !== 'New Page') {
+        if (
+          container.name?.trim() &&
+          container.name.toLowerCase() !== 'page' &&
+          container.name.toLowerCase() !== 'new page'
+        ) {
           pageName = `${pageName} - ${container.name}`;
         }
 
@@ -322,7 +329,7 @@ export class SurveysService extends BaseService {
       }
 
       // Handle other container types
-      switch (container.type) {
+      switch (container.type?.toLowerCase()) {
         case 'section':
           // Nested section
           return {

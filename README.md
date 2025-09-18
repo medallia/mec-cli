@@ -1,24 +1,48 @@
 # MEC CLI
 
-**MEC** (Medallia Experience Cloud) - A command-line tool to interact with Medallia Experience Cloud services.
+This application is a reference implementation for interacting with Medallia Experience Cloud (MEC) services via the command line.
 
 ## Quick Start
 
+### Prerequisites
+- [Node.js](https://nodejs.org/) (version 24 or higher)
+- [npm](https://www.npmjs.com/) (version 11 or higher; comes with Node.js)
+- [Git](https://git-scm.com/) (for cloning the repository)
+
 ### Installation
+
 ```bash
-# Clone and build
-git clone https://github.com/medallia/mec-cli
+# Clone the repository
+git clone https://github.com/medallia/mec-cli.git
 cd mec-cli
+
+# Install dependencies and build
 npm install
 npm run build
 
 # Verify installation
-./bin/mec --version
+./bin/mec --help
 ```
+> **Tip:** For local development, add `./bin` to your `PATH` or create an alias for easier use:
+>
+> ```bash
+> # For bash users
+> echo "alias mec='$(pwd)/bin/mec'" >> ~/.bashrc && source ~/.bashrc
+> 
+> # For zsh users  
+> echo "alias mec='$(pwd)/bin/mec'" >> ~/.zshrc && source ~/.zshrc
+> ```
+>
+> After this, you can run `mec` from anywhere in your terminal.
+>
+> **Note:** Remove the alias or PATH modification before installing via package managers (like `brew install`), as they automatically add `mec` to your PATH and may conflict with local development setup.
 
 ### Configuration
+
+Configuration profiles are stored in `${USER_HOME}/.mec/profiles` as a human-readable INI file with secure file permissions (owner read/write only). Profiles can be managed via commands or edited directly in the file.
+
 ```bash
-# Configure your environment
+# Configure your default profile
 mec configure \
   --token-url "https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token" \
   --client-id "digital_integration" \
@@ -48,9 +72,9 @@ mec profiles delete --profile "merlin-prod"   # Delete a profile
 
 ### Survey Operations
 ```bash
-mec surveys list                    # List all surveys
-mec surveys list --name "feedback"  # Filter by name
-mec surveys list --uuid "..."       # Find by UUID
+mec surveys list                                                    # List all surveys
+mec surveys list --name "feedback"                                  # Filter by name
+mec surveys list --uuid "dfc33eb1-2039-4bb5-b682-0a9dc894b2e5"      # Find by UUID
 ```
 
 ### Translation Operations
@@ -116,6 +140,18 @@ mec configure --help                 # Command-specific help
 mec translations download --help     # Subcommand help
 ```
 
----
+## License
 
-**Version:** 1.0.0 | **Last Updated:** September 2025
+Copyright 2025.  Medallia, Inc.
+    
+Licensed under the Apache License, Version 2.0 (the "License"); you may
+not use this file except in compliance with the License.  You may obtain
+a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

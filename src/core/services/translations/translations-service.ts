@@ -520,7 +520,8 @@ export class TranslationsService extends BaseService {
       const originalFileName = FileValidator.sanitizeFilename(
         filePath.split('/').pop() || 'translations.xlsx'
       );
-      const originalFileNameWithoutExtension = PathUtils.getFileNameWithoutExtension(originalFileName);
+      const originalFileNameWithoutExtension =
+        PathUtils.getFileNameWithoutExtension(originalFileName);
       const processedFileName = `${originalFileNameWithoutExtension}-${FILE_PROCESSING.PROCESSED_TRANSLATIONS_SUFFIX}.xlsx`;
 
       const outputFilePath = isDebugEnabled

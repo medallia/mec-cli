@@ -137,15 +137,15 @@ export const VALIDATION = {
 // API Configuration
 // Note: Environment variables can be set to override defaults
 export const API_DEFAULTS = {
-  TIMEOUT_MS: parseInt(process.env.MEC_API_TIMEOUT_MS || '30000', 10),
-  POLL_MAX_ATTEMPTS: parseInt(process.env.MEC_POLL_MAX_ATTEMPTS || '30', 10),
-  POLL_INTERVAL_MS: parseInt(process.env.MEC_POLL_INTERVAL_MS || '1000', 10),
-  RETRY_MAX_ATTEMPTS: parseInt(process.env.MEC_RETRY_MAX_ATTEMPTS || '3', 10),
-  RETRY_DELAY_MS: parseInt(process.env.MEC_RETRY_DELAY_MS || '1000', 10),
+  TIMEOUT_MS: parseInt(process.env.MEC_API_TIMEOUT_MS || '30000', 10), // 30 seconds
+  POLL_MAX_ATTEMPTS: parseInt(process.env.MEC_POLL_MAX_ATTEMPTS || '30', 10), // 30 attempts
+  POLL_INTERVAL_MS: parseInt(process.env.MEC_POLL_INTERVAL_MS || '1000', 10), // 1 second
+  RETRY_MAX_ATTEMPTS: parseInt(process.env.MEC_RETRY_MAX_ATTEMPTS || '3', 10), // 3 attempts
+  RETRY_DELAY_MS: parseInt(process.env.MEC_RETRY_DELAY_MS || '1000', 10), // 1 second
   PAGINATION: {
-    LIMIT: parseInt(process.env.MEC_PAGINATION_LIMIT || '50', 10),
-    OFFSET: parseInt(process.env.MEC_PAGINATION_OFFSET || '0', 10),
-    MAX_LIMIT: parseInt(process.env.MEC_PAGINATION_MAX_LIMIT || '100', 10),
+    LIMIT: parseInt(process.env.MEC_PAGINATION_LIMIT || '50', 10), // 50 items
+    OFFSET: parseInt(process.env.MEC_PAGINATION_OFFSET || '0', 10), // 0 offset
+    MAX_LIMIT: parseInt(process.env.MEC_PAGINATION_MAX_LIMIT || '100', 10), // 100 items
   },
 };
 
