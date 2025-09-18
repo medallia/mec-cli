@@ -1,7 +1,7 @@
 import { isVerboseEnabled } from './helpers';
 
 /**
- * Simple utility logger that only logs when debug mode is enabled
+ * Simple utility logger that only logs when verbose mode is enabled
  * Keeps logging concerns separate from business logic
  */
 

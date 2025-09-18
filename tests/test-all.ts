@@ -7,6 +7,7 @@
 
 import { CoreTester } from './test-core';
 import { ParseTester } from './test-parser';
+import { TranslationsTester } from './test-translations';
 import { UtilityTester } from './test-utils';
 
 async function testInterceptors() {
@@ -73,8 +74,22 @@ class MasterTestRunner {
 
     console.log('\n');
 
+    // Run Translations Tests
+    console.log('4️⃣  TRANSLATIONS TESTS');
+    console.log('━'.repeat(50));
+    try {
+      const translationsTester = new TranslationsTester();
+      await translationsTester.runAllTests();
+      testResults.push({ name: 'Translations Tests', success: true });
+    } catch (error) {
+      console.error('❌ Translations tests failed:', error);
+      testResults.push({ name: 'Translations Tests', success: false });
+    }
+
+    console.log('\n');
+
     // Run Interceptor Tests
-    console.log('4️⃣  INTERCEPTOR TESTS');
+    console.log('5️⃣  INTERCEPTOR TESTS');
     console.log('━'.repeat(50));
     const interceptorSuccess = await testInterceptors();
     testResults.push({ name: 'Interceptor Tests', success: interceptorSuccess });

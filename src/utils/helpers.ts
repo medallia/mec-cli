@@ -1,9 +1,5 @@
 // Helper utility functions
 
-/**
- * Simple debug detection using process.argv
- * Returns true if --verbose  or -v flags are present
- */
 export const isVerboseEnabled: boolean =
   process.argv.includes('--verbose') || process.argv.includes('-v');
 

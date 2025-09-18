@@ -7,6 +7,7 @@ Comprehensive test coverage for the MEC CLI application.
 - **Core Tests** (`test-core.ts`) - Business logic, dependency injection, configuration
 - **Parser Tests** (`test-parser.ts`) - Command-line parsing and CLI structure  
 - **Utility Tests** (`test-utils.ts`) - Helper functions and formatters
+- **Translations Tests** (`test-translations.ts`) - Translation service
 - **Interceptor Tests** (`test-interceptors.ts`) - HTTP clients and authentication
 - **Integration Tests** (`test-cli.sh`) - End-to-end bash script testing
 
@@ -26,6 +27,7 @@ npx ts-node tests/test-all.ts
 npx ts-node tests/test-core.ts
 npx ts-node tests/test-parser.ts
 npx ts-node tests/test-utils.ts
+npx ts-node tests/test-translations.ts
 npx ts-node tests/test-interceptors.ts
 ```
 

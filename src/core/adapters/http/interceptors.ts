@@ -60,16 +60,19 @@ export class RequestInterceptor {
     try {
       log.info(`${EMOJIS.LOADING} Authenticating...`);
 
+      const credentials = Buffer.from(
+        `${profile.oauth2.clientId}:${profile.oauth2.clientSecret}`
+      ).toString('base64');
+
       const response = await axios.post(
         profile.oauth2.tokenUrl,
         new URLSearchParams({
           grant_type: 'client_credentials',
-          client_id: profile.oauth2.clientId,
-          client_secret: profile.oauth2.clientSecret,
         }),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Basic ${credentials}`,
           },
         }
       );

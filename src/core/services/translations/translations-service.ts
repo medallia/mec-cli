@@ -356,8 +356,8 @@ export class TranslationsService extends BaseService {
       return '';
     }
 
-    const hasHtmlBlocks = this.containsHtmlBlocks(text);
-    const hasVariables = this.containsVariables(text);
+    const hasHtmlBlocks = TranslationsService.containsHtmlBlocks(text);
+    const hasVariables = TranslationsService.containsVariables(text);
 
     if (hasHtmlBlocks && hasVariables) {
       return 'Contains HTML/code and variables - please be mindful of the structure when performing the translation';
@@ -373,24 +373,25 @@ export class TranslationsService extends BaseService {
   /**
    * Check if text contains HTML blocks using regex
    */
-  private containsHtmlBlocks(text: string): boolean {
+  static containsHtmlBlocks(text: string): boolean {
     // Simple HTML tag regex - looks for opening and closing tags
-    const htmlTagRegex = /<[^>]+>/;
+    const htmlTagRegex = /^<([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(?:\/>|>[\s\S]*<\/\1>)$/;
 
-    // BBCode style pattern regex - looks for patterns like [a href="..."], [/a], [u], [/u], [b], [/b], etc.
-    // Not BBCode entirely but captures similar structures
-    const bbCodeRegex = /\[(?:\/)?(?:[a-zA-Z]+(?:\s+[^[\]]*)?|[a-zA-Z]+="[^"]*")\]/;
+    // Pseudo-HTML style pattern regex
+    // Matches: [b], [/b], [u], [/u], [a href="..."], [/a], etc.
+    const pseudoHtmlRegex = /\[(\/)?[a-z]+(?:\s+[a-z]+="[^"]*")?\]/gi;
 
-    return htmlTagRegex.test(text) || bbCodeRegex.test(text);
+    return htmlTagRegex.test(text) || pseudoHtmlRegex.test(text);
   }
 
   /**
    * Check if text contains variables using regex
    */
-  private containsVariables(text: string): boolean {
-    // Variable pattern regex - looks for patterns like [=variable_name], [=u_bp_brand_txt]
-    const variableRegex = /\[=[a-zA-Z_][a-zA-Z0-9_]*\]/;
+  static containsVariables(text: string): boolean {
+    // Matches variable patterns like [=variable_name], [=e_firstname:html], [=e_firstname:John:html], etc.
+    const variableRegex = /\[=[^\s\]]+[^\]]*\]/g;
 
+   
     return variableRegex.test(text);
   }
 
