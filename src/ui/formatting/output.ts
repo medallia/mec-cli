@@ -1,55 +1,54 @@
-import chalk from 'chalk';
-
 import { EMOJIS } from '../../core/config/constants';
+import { Colors } from './colors';
 
 export class OutputFormatter {
   formatSuccess(message: string): string {
-    return chalk.green(`${EMOJIS.SUCCESS} ${message}`);
+    return Colors.success(`${EMOJIS.SUCCESS} ${message}`);
   }
 
   formatError(message: string): string {
-    return chalk.red(`${EMOJIS.ERROR}  ${message}`);
+    return Colors.error(`${EMOJIS.ERROR}  ${message}`);
   }
 
   formatWarning(message: string): string {
-    return chalk.yellow(`${EMOJIS.WARNING}  ${message}`);
+    return Colors.warning(`${EMOJIS.WARNING}  ${message}`);
   }
 
   formatInfo(message: string): string {
-    return chalk.cyan(`${EMOJIS.INFO}  ${message}`);
+    return Colors.info(`${EMOJIS.INFO}  ${message}`);
   }
 
   formatHighlight(text: string): string {
-    return chalk.blueBright(text);
+    return Colors.accent(text);
   }
 
   formatDim(text: string): string {
-    return chalk.gray(text);
+    return Colors.muted(text);
   }
 
   formatBold(text: string): string {
-    return chalk.bold(text);
+    return Colors.emphasis(text);
   }
 
   formatCode(text: string): string {
-    return chalk.inverse(` ${text} `);
+    return Colors.code(` ${text} `);
   }
 
   formatUrl(url: string): string {
-    return chalk.blueBright.underline(url);
+    return Colors.link(url);
   }
 
   createSeparator(char: string = '─', length: number = 50): string {
-    return chalk.gray(char.repeat(length));
+    return Colors.muted(char.repeat(length));
   }
 
   createHeader(title: string): string {
     const separator = this.createSeparator('═', title.length + 4);
-    return chalk.blue(`${separator}\n  ${title.toUpperCase()}  \n${separator}`);
+    return Colors.info(`${separator}\n  ${title.toUpperCase()}  \n${separator}`);
   }
 
   createSection(title: string, content: string[]): string {
-    let output = chalk.blue(`\n${EMOJIS.INFO} ${title}:\n`);
+    let output = Colors.info(`\n${EMOJIS.INFO} ${title}:\n`);
     content.forEach(line => {
       output += `  ${line}\n`;
     });

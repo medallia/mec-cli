@@ -1,6 +1,5 @@
-import chalk from 'chalk';
-
 import { EMOJIS, UI_SETTINGS } from '../../core/config/constants';
+import { Colors } from './colors';
 
 export class ProgressFormatter {
   private spinnerIndex = 0;
@@ -11,7 +10,7 @@ export class ProgressFormatter {
 
     this.interval = setInterval(() => {
       process.stdout.write(
-        `\r${message} ${chalk.cyan(UI_SETTINGS.SPINNER_CHARS[this.spinnerIndex])}`
+        `\r${message} ${Colors.info(UI_SETTINGS.SPINNER_CHARS[this.spinnerIndex])}`
       );
       this.spinnerIndex = (this.spinnerIndex + 1) % UI_SETTINGS.SPINNER_CHARS.length;
     }, UI_SETTINGS.SPINNER_INTERVAL);
@@ -36,7 +35,7 @@ export class ProgressFormatter {
 
     const bar =
       '█'.repeat(filledLength) + '░'.repeat(UI_SETTINGS.PROGRESS_BAR_LENGTH - filledLength);
-    const progressText = `${message || 'Progress'}: [${chalk.green(bar)}] ${percentage}% (${current}/${total})`;
+    const progressText = `${message || 'Progress'}: [${Colors.success(bar)}] ${percentage}% (${current}/${total})`;
 
     process.stdout.write(`\r${progressText}`);
 
@@ -46,18 +45,18 @@ export class ProgressFormatter {
   }
 
   displaySteps(steps: string[], currentStep: number): void {
-    console.log(chalk.blue('\nProgress:'));
+    console.log(Colors.info('\nProgress:'));
 
     steps.forEach((step, index) => {
       const stepNum = index + 1;
       let prefix: string;
 
       if (stepNum < currentStep) {
-        prefix = chalk.green(`${EMOJIS.SUCCESS} [${stepNum}]`);
+        prefix = Colors.success(`${EMOJIS.SUCCESS} [${stepNum}]`);
       } else if (stepNum === currentStep) {
-        prefix = chalk.yellow(`${EMOJIS.LOADING} [${stepNum}]`);
+        prefix = Colors.warning(`${EMOJIS.LOADING} [${stepNum}]`);
       } else {
-        prefix = chalk.gray(`${EMOJIS.PENDING} [${stepNum}]`);
+        prefix = Colors.muted(`${EMOJIS.PENDING} [${stepNum}]`);
       }
 
       console.log(`  ${prefix} ${step}`);

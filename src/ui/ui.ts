@@ -1,12 +1,10 @@
-import chalk from 'chalk';
-
 import { APP_NAME, COMMANDS, EMOJIS } from '../core/config/constants';
 import { ProfileManager } from '../core/config/profiles';
 import { ProfileConfig, ProfileSummary } from '../core/config/types';
 import { SurveyItem } from '../core/services/surveys/types';
 import { TranslationImportChangesItem } from '../core/services/translations/types';
 
-import { OutputFormatter, TableFormatter, ProgressFormatter } from './formatting';
+import { OutputFormatter, TableFormatter, ProgressFormatter, Colors } from './formatting';
 import { ConfigurationPrompt } from './prompts/configuration';
 
 /**
@@ -42,7 +40,7 @@ export class UI {
       return;
     }
 
-    console.log(chalk.blue(`\n${EMOJIS.PROFILE} Configured Profile(s):`));
+    console.log(Colors.info(`\n${EMOJIS.PROFILE} Configured Profile(s):`));
     this.table.displayProfilesTable(profileNames);
   }
 
@@ -57,14 +55,16 @@ export class UI {
       return;
     }
 
-    console.log(chalk.blue(`\n${EMOJIS.PROFILE} Configured Profiles (${profilesSummary.length}):`));
+    console.log(
+      Colors.info(`\n${EMOJIS.PROFILE} Configured Profiles (${profilesSummary.length}):`)
+    );
     this.table.displayDetailedProfilesTable(profilesSummary);
   }
 
   displayProfileDetails(profileName: string, config: ProfileConfig): void {
     const summary = ProfileManager.getProfileSummary(profileName, config);
 
-    console.log(chalk.blue(`\n${EMOJIS.PROFILE} Profile Details: ${profileName}`));
+    console.log(Colors.info(`\n${EMOJIS.PROFILE} Profile Details: ${profileName}`));
     this.table.displaySingleProfileDetails(summary);
   }
 
@@ -78,7 +78,7 @@ export class UI {
       return;
     }
 
-    console.log(chalk.blue(`\n${EMOJIS.SURVEY} Survey Program(s):`));
+    console.log(Colors.info(`\n${EMOJIS.SURVEY} Survey Program(s):`));
     this.table.displaySurveysTable(surveys, getAdminSurveyEditorUrlById);
   }
 
@@ -90,18 +90,18 @@ export class UI {
     }
 
     if (changes.length <= 100) {
-      console.log(chalk.blue(`\n${EMOJIS.SURVEY} Translation Change(s) Preview:`));
+      console.log(Colors.info(`\n${EMOJIS.SURVEY} Translation Change(s) Preview:`));
       this.table.displayTranslationChangesTable(changes);
     } else {
       // Profile changes hidden when changes exceed 100
       console.log(
-        chalk.blue(
+        Colors.info(
           `\n${EMOJIS.SURVEY} Translation Changes exceed 100 items, skipping detailed table preview...`
         )
       );
     }
 
-    console.log(chalk.blue(`\n${EMOJIS.SURVEY} Translation Change Stats:`));
+    console.log(Colors.info(`\n${EMOJIS.SURVEY} Translation Change Stats:`));
     this.table.displayTranslationChangesStatsTable(changes);
   }
 

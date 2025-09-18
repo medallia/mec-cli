@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import Table from 'cli-table3';
 
 import { ProfileSummary } from '../../core';
@@ -13,6 +12,7 @@ import {
 import { SurveyItem } from '../../core/services/surveys/types';
 import { TranslationImportChangesItem } from '../../core/services/translations/types';
 import { maskSecret } from '../../utils/helpers';
+import { Colors } from './colors';
 
 export class TableFormatter {
   displayKeyValueTable(data: Record<string, string>): void {
@@ -25,7 +25,7 @@ export class TableFormatter {
 
     Object.entries(data).forEach(([key, value]) => {
       const row: Record<string, string> = {};
-      row[chalk.cyan(key)] = chalk.white(value);
+      row[Colors.accent(key)] = Colors.tableContent(value);
       table.push(row);
     });
 
@@ -37,7 +37,11 @@ export class TableFormatter {
    */
   displayProfilesTable(profileNames: string[]): void {
     const table = new Table({
-      head: ['No.', 'Profile Name', 'Status'],
+      head: [
+        Colors.tableHeader('No.'),
+        Colors.tableHeader('Profile Name'),
+        Colors.tableHeader('Status'),
+      ],
       colWidths: [5, 30, 15],
       style: {
         head: [],
@@ -47,9 +51,12 @@ export class TableFormatter {
     });
 
     profileNames.forEach((name, index) => {
-      const status = name === PROFILE_DEFAULTS.NAME ? chalk.green(`Default`) : chalk.blue(`Active`);
+      const status =
+        name === PROFILE_DEFAULTS.NAME
+          ? Colors.statusDefault(`Default`)
+          : Colors.statusActive(`Active`);
 
-      table.push([chalk.cyan((index + 1).toString()), chalk.white(name), status]);
+      table.push([Colors.tableIndex((index + 1).toString()), Colors.tableValue(name), status]);
     });
 
     console.log(table.toString());
@@ -64,18 +71,18 @@ export class TableFormatter {
       const statusText = profile.isComplete ? 'Complete' : 'Incomplete';
 
       console.log(
-        `  ${index + 1}. ${chalk.cyan(profile.name)} - ${statusIcon} ${statusText} (${profile.completionPercentage}%)`
+        `  ${index + 1}. ${Colors.accent(profile.name)} - ${statusIcon} ${statusText} (${profile.completionPercentage}%)`
       );
-      console.log(`     API Gateway: ${profile.baseUrl || chalk.gray('Not set')}`);
+      console.log(`     API Gateway: ${profile.baseUrl || Colors.muted('Not set')}`);
 
       if (!profile.isComplete && profile.missingFields.length > 0) {
-        console.log(`     Missing: ${chalk.yellow(profile.missingFields.join(', '))}`);
+        console.log(`     Missing: ${Colors.warning(profile.missingFields.join(', '))}`);
       }
       console.log('');
     });
 
     console.log(
-      chalk.gray(
+      Colors.muted(
         `${EMOJIS.INFO} Use "${APP_NAME} ${COMMANDS.PROFILES} ${SUB_COMMANDS.PROFILES.SHOW} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.NAME)} <name>" for detailed information.`
       )
     );
@@ -94,28 +101,32 @@ export class TableFormatter {
     console.log('');
 
     console.log(`${EMOJIS.CONFIG} Profile Configuration:`);
-    console.log(`   Name: ${chalk.cyan(profileSummary.name)}`);
+    console.log(`   Name: ${Colors.accent(profileSummary.name)}`);
     console.log(
-      `   API Gateway URL: ${profileSummary.baseUrl || chalk.red(`${EMOJIS.ERROR} Not set`)}`
-    );
-    console.log(`   Token URL: ${profileSummary.tokenUrl || chalk.red(`${EMOJIS.ERROR} Not set`)}`);
-    console.log(`   Client ID: ${profileSummary.clientId || chalk.red(`${EMOJIS.ERROR} Not set`)}`);
-    console.log(
-      `   Client Secret: ${profileSummary.clientSecret ? maskSecret(profileSummary.clientSecret) : chalk.red(`${EMOJIS.ERROR} Not set`)}`
+      `   API Gateway URL: ${profileSummary.baseUrl || Colors.error(`${EMOJIS.ERROR} Not set`)}`
     );
     console.log(
-      `   Output Path: ${profileSummary.outputPath || chalk.yellow(`Default: ${PROFILE_DEFAULTS.OUTPUT_PATH}`)}`
+      `   Token URL: ${profileSummary.tokenUrl || Colors.error(`${EMOJIS.ERROR} Not set`)}`
     );
-    console.log(`   Languages: ${profileSummary.languages || chalk.gray('Not set')}`);
     console.log(
-      `   Include HTML Blocks: ${profileSummary.includeHtmlBlocks ? chalk.green('Yes') : chalk.gray('No')}`
+      `   Client ID: ${profileSummary.clientId || Colors.error(`${EMOJIS.ERROR} Not set`)}`
+    );
+    console.log(
+      `   Client Secret: ${profileSummary.clientSecret ? maskSecret(profileSummary.clientSecret) : Colors.error(`${EMOJIS.ERROR} Not set`)}`
+    );
+    console.log(
+      `   Output Path: ${profileSummary.outputPath || Colors.warning(`Default: ${PROFILE_DEFAULTS.OUTPUT_PATH}`)}`
+    );
+    console.log(`   Languages: ${profileSummary.languages || Colors.muted('Not set')}`);
+    console.log(
+      `   Include HTML Blocks: ${profileSummary.includeHtmlBlocks ? Colors.success('Yes') : Colors.muted('No')}`
     );
     console.log('');
 
     if (!profileSummary.isComplete) {
       console.log('');
       console.log(
-        chalk.cyan(
+        Colors.info(
           `${EMOJIS.INFO} Run "${APP_NAME} ${COMMANDS.CONFIGURE} --profile ${profileSummary.name}" to complete the setup.`
         )
       );
@@ -130,7 +141,11 @@ export class TableFormatter {
     getAdminSurveyEditorUrlById: (id: string) => string
   ): void {
     const table = new Table({
-      head: [chalk.white('No.'), chalk.white('Survey Name'), chalk.white('Survey ID')],
+      head: [
+        Colors.tableHeader('No.'),
+        Colors.tableHeader('Survey Name'),
+        Colors.tableHeader('Survey ID'),
+      ],
       colWidths: [5, 50, 40],
       style: {
         head: [],
@@ -145,9 +160,9 @@ export class TableFormatter {
       const href = getAdminSurveyEditorUrlById(survey.id);
 
       const row = [
-        { content: chalk.cyan((index + 1).toString()) },
-        { content: chalk.blue(`${survey.name}`), href },
-        { content: chalk.gray(survey.id) },
+        { content: Colors.tableIndex((index + 1).toString()) },
+        { content: Colors.tableValue(`${survey.name}`), href },
+        { content: Colors.tableId(survey.id) },
       ];
 
       table.push(row);
@@ -163,11 +178,11 @@ export class TableFormatter {
   displayTranslationChangesTable(changes: TranslationImportChangesItem[]): void {
     const table = new Table({
       head: [
-        chalk.white('ID'),
-        chalk.white('Type'),
-        chalk.white('Category'),
-        chalk.white('Old Text'),
-        chalk.white('New Text'),
+        Colors.tableHeader('ID'),
+        Colors.tableHeader('Type'),
+        Colors.tableHeader('Category'),
+        Colors.tableHeader('Old Text'),
+        Colors.tableHeader('New Text'),
       ],
       colWidths: [5, 14, 22, 38, 38],
       style: {
@@ -178,11 +193,11 @@ export class TableFormatter {
 
     changes.forEach((change, index) => {
       table.push([
-        chalk.cyan((index + 1).toString()),
-        chalk.white(change.type || ''),
-        chalk.white(change.translation_category || ''),
-        chalk.gray(change.old_text || ''),
-        chalk.green(change.new_text || ''),
+        Colors.tableIndex((index + 1).toString()),
+        Colors.tableContent(change.type || ''),
+        Colors.tableContent(change.translation_category || ''),
+        Colors.muted(change.old_text || ''),
+        Colors.success(change.new_text || ''),
       ]);
     });
 
@@ -199,7 +214,7 @@ export class TableFormatter {
     );
 
     const table = new Table({
-      head: [chalk.white('Type'), chalk.white('Count')],
+      head: [Colors.tableHeader('Type'), Colors.tableHeader('Count')],
       colWidths: [16, 16],
       style: {
         head: [],
@@ -208,7 +223,7 @@ export class TableFormatter {
     });
 
     Object.entries(typeCounts).forEach(([type, count]) => {
-      table.push([chalk.white(type), chalk.cyan(count.toString())]);
+      table.push([Colors.tableContent(type), Colors.tableIndex(count.toString())]);
     });
 
     console.log(table.toString());
