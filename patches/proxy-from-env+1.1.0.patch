@@ -1,0 +1,28 @@
+diff --git a/node_modules/proxy-from-env/index.js b/node_modules/proxy-from-env/index.js
+index df75004..fd50068 100644
+--- a/node_modules/proxy-from-env/index.js
++++ b/node_modules/proxy-from-env/index.js
+@@ -1,6 +1,22 @@
+ 'use strict';
+ 
+-var parseUrl = require('url').parse;
++// Use the modern URL API instead of deprecated url.parse
++const { URL } = require('url');
++
++// Legacy parseUrl function for backwards compatibility
++function parseUrl(url) {
++  try {
++    const parsed = new URL(url);
++    return {
++      protocol: parsed.protocol,
++      hostname: parsed.hostname,
++      port: parsed.port,
++      path: parsed.pathname + parsed.search,
++    };
++  } catch (e) {
++    return null;
++  }
++}
+ 
+ var DEFAULT_PORTS = {
+   ftp: 21,

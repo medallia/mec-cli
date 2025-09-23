@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env node
 import { CLIApplication } from '../src/app/cli';
 
 const app = new CLIApplication();

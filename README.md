@@ -5,7 +5,7 @@ This application is a reference implementation for interacting with Medallia Exp
 ## Quick Start
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (version 24 or higher)
+- [Node.js](https://nodejs.org/) (version 20 or higher)
 - [npm](https://www.npmjs.com/) (version 11 or higher; comes with Node.js)
 - [Git](https://git-scm.com/) (for cloning the repository)
 

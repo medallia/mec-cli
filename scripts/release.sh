@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # GitHub Release script for mec CLI
-# Creates a git tag and GitHub release with the packaged tarball
+# Creates a git tag and GitHub release with standalone binaries
 
 set -e
 
 # Configuration
 PACKAGE_NAME="mec"
 DIST_DIR="releases"
+PLATFORMS=("macos-arm64" "macos-x64" "linux-x64" "linux-arm64")
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,17 +20,19 @@ NC='\033[0m' # No Color
 # Get version from package.json
 VERSION=$(node -pe "require('./package.json').version")
 TAG_NAME="v${VERSION}"
-TARBALL="${PACKAGE_NAME}-${VERSION}.tgz"
-TARBALL_PATH="${DIST_DIR}/${TARBALL}"
 
 echo -e "${BLUE}🚀 Preparing release for ${PACKAGE_NAME} v${VERSION}${NC}"
 
-# Check if tarball exists
-if [ ! -f "$TARBALL_PATH" ]; then
-    echo -e "${RED}❌ Tarball not found: ${TARBALL_PATH}${NC}"
-    echo -e "${YELLOW}💡 Run 'npm run package' first${NC}"
-    exit 1
-fi
+# Check if binaries exist
+echo -e "${YELLOW}🔍 Checking for release binaries...${NC}"
+for platform in "${PLATFORMS[@]}"; do
+    binary_path="${DIST_DIR}/mec-${platform}"
+    if [ ! -f "$binary_path" ]; then
+        echo -e "${RED}❌ Binary not found: ${binary_path}${NC}"
+        echo -e "${YELLOW}💡 Run './scripts/package-homebrew.sh' first${NC}"
+        exit 1
+    fi
+done
 
 # Check if git tag already exists
 if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
@@ -49,8 +52,11 @@ git push origin "$TAG_NAME"
 echo -e "${GREEN}✅ Release ${TAG_NAME} created and pushed successfully!${NC}"
 echo -e "${BLUE}📋 Next steps:${NC}"
 echo -e "  1. Go to: https://github.com/medallia/mec-cli/releases/new?tag=${TAG_NAME}"
-echo -e "  2. Upload: ${TARBALL_PATH}"
-echo -e "  3. Write custom release notes"
+echo -e "  2. Upload these binaries:"
+for platform in "${PLATFORMS[@]}"; do
+    echo -e "     • ${DIST_DIR}/mec-${platform}"
+done
+echo -e "  3. Write release notes"
 echo -e "  4. Publish the release"
 
 echo -e "\n${GREEN}🎉 Release ${TAG_NAME} is ready!${NC}"
