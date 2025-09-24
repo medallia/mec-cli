@@ -42,5 +42,4 @@ npm run release
 - Node.js v20+ (for building)
 - curl, tar (for Node.js binary downloads)
 - Git (for releases)
-- Git tag `v{version}` - For GitHub releases
 - Console output with Homebrew formula snippet and release notes

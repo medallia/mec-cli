@@ -26,10 +26,10 @@ echo -e "${BLUE}🚀 Preparing release for ${PACKAGE_NAME} v${VERSION}${NC}"
 # Check if binaries exist
 echo -e "${YELLOW}🔍 Checking for release binaries...${NC}"
 for platform in "${PLATFORMS[@]}"; do
-    binary_path="${DIST_DIR}/mec-${platform}"
+    binary_path="${DIST_DIR}/mec-${platform}.tgz"
     if [ ! -f "$binary_path" ]; then
         echo -e "${RED}❌ Binary not found: ${binary_path}${NC}"
-        echo -e "${YELLOW}💡 Run './scripts/package-homebrew.sh' first${NC}"
+        echo -e "${YELLOW}💡 Run 'npm run package' first${NC}"
         exit 1
     fi
 done
@@ -52,9 +52,9 @@ git push origin "$TAG_NAME"
 echo -e "${GREEN}✅ Release ${TAG_NAME} created and pushed successfully!${NC}"
 echo -e "${BLUE}📋 Next steps:${NC}"
 echo -e "  1. Go to: https://github.com/medallia/mec-cli/releases/new?tag=${TAG_NAME}"
-echo -e "  2. Upload these binaries:"
+echo -e "  2. Upload these .tgz compressed binaries:"
 for platform in "${PLATFORMS[@]}"; do
-    echo -e "     • ${DIST_DIR}/mec-${platform}"
+    echo -e "     • ${DIST_DIR}/mec-${platform}.tgz"
 done
 echo -e "  3. Write release notes"
 echo -e "  4. Publish the release"

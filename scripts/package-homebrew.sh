@@ -55,12 +55,21 @@ HASH_DIR=$(mktemp -d)
 for platform in "${PLATFORMS[@]}"; do
     src_binary="${BUILD_DIR}/mec-${platform}"
     dest_binary="${DIST_DIR}/mec-${platform}"
+    dest_compressed="${DIST_DIR}/mec-${platform}.gz"
     
+    # Copy uncompressed binary for local testing
     cp "$src_binary" "$dest_binary"
-    hash=$(shasum -a 256 "$dest_binary" | cut -d' ' -f1)
+    
+    # Create .tgz compressed version for GitHub releases (tar + gzip, built-in compression)
+    echo -e "${YELLOW}  Compressing with tar + gzip...${NC}"
+    dest_tgz="${DIST_DIR}/mec-${platform}.tgz"
+    tar -czf "$dest_tgz" -C "$(dirname "$src_binary")" "$(basename "$src_binary")"
+    
+    # Generate hash for compressed version (for Homebrew formula)
+    hash=$(shasum -a 256 "$dest_tgz" | cut -d' ' -f1)
     echo "$hash" > "${HASH_DIR}/${platform}"
     
-    echo -e "${GREEN}  ✅ ${platform}: ${hash}${NC}"
+    echo -e "${GREEN}  ✅ ${platform}: ${hash} (.tgz compressed)${NC}"
 done
 
 echo -e "${GREEN}✅ Binaries packaged successfully!${NC}"
@@ -78,13 +87,13 @@ for platform in "${PLATFORMS[@]}"; do
             echo "on_macos do"
             echo "  # macOS ARM64"
             echo "  if Hardware::CPU.arm?"
-            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}\""
+            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}.tgz\""
             echo "    sha256 \"${hash}\""
             ;;
         "macos-x64")
             echo "  # macOS x64"
             echo "  else"
-            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}\""
+            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}.tgz\""
             echo "    sha256 \"${hash}\""
             echo "  end"
             ;;
@@ -93,13 +102,13 @@ for platform in "${PLATFORMS[@]}"; do
             echo "on_linux do"
             echo "  # Linux x64"
             echo "  if Hardware::CPU.intel?"
-            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}\""
+            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}.tgz\""
             echo "    sha256 \"${hash}\""
             ;;
         "linux-arm64")
             echo "  # Linux ARM64"
             echo "  else"
-            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}\""
+            echo "    url \"https://github.com/medallia/mec-cli/releases/download/v${VERSION}/mec-${platform}.tgz\""
             echo "    sha256 \"${hash}\""
             echo "  end"
             echo "end"
