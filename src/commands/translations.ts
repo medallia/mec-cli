@@ -79,8 +79,8 @@ export class TranslationsCommand implements ICommand {
             profileConfig?.languages ??
             PROFILE_DEFAULTS.LANGUAGES,
           outputPath:
-            options[CLI_OPTIONS.TRANSLATIONS.OUTPUT_PATH] ??
-            profileConfig?.outputPath ??
+            options[CLI_OPTIONS.TRANSLATIONS.OUTPUT_PATH] ||
+            profileConfig?.outputPath ||
             PROFILE_DEFAULTS.OUTPUT_PATH,
           includeHtmlBlocks:
             options[CLI_OPTIONS.TRANSLATIONS.INCLUDE_HTML_BLOCKS] ??
@@ -113,8 +113,8 @@ export class TranslationsCommand implements ICommand {
           file: options[CLI_OPTIONS.TRANSLATIONS.FILE] ?? '',
           // Override priority: CLI options > Profile config > Defaults
           outputPath:
-            options[CLI_OPTIONS.TRANSLATIONS.OUTPUT_PATH] ??
-            profileConfig?.outputPath ??
+            options[CLI_OPTIONS.TRANSLATIONS.OUTPUT_PATH] ||
+            profileConfig?.outputPath ||
             PROFILE_DEFAULTS.OUTPUT_PATH,
           // Debug options - not saved/collected as part of profile creation
           pretendUpload:
