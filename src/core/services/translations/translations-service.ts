@@ -95,14 +95,14 @@ export class TranslationsService extends BaseService {
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
     const simplifiedTranslationsFileName = `${options.survey.id}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
-    const simplifiedTranslationsFilePath = `${options.outputPath}/${simplifiedTranslationsFileName}`;
+    const simplifiedTranslationsFilePath = PathUtils.join(options.outputPath, simplifiedTranslationsFileName);
     const rawTranslationsFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
     const rawTranslationsFilePath = isDebugEnabled
-      ? `${options.outputPath}/${rawTranslationsFileName}`
+      ? PathUtils.join(options.outputPath, rawTranslationsFileName)
       : this.fsAdapter.getTempFilePath(rawTranslationsFileName);
     const surveyFlatViewFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.SURVEY_SPEC_SUFFIX}${FILE_EXTENSIONS.JSON}`;
     if (isDebugEnabled) {
-      const surveyFlatViewFilePath = `${options.outputPath}/${surveyFlatViewFileName}`;
+      const surveyFlatViewFilePath = PathUtils.join(options.outputPath, surveyFlatViewFileName);
       this.fsAdapter.writeFileSync(
         surveyFlatViewFilePath,
         JSON.stringify(surveyFlatViewResponse, null, 2)
@@ -530,7 +530,7 @@ export class TranslationsService extends BaseService {
       const processedFileName = `${originalFileNameWithoutExtension}-${FILE_PROCESSING.PROCESSED_TRANSLATIONS_SUFFIX}.xlsx`;
 
       const outputFilePath = isDebugEnabled
-        ? `${outputPath}/${processedFileName}`
+        ? PathUtils.join(outputPath, processedFileName)
         : this.fsAdapter.getTempFilePath(processedFileName);
 
       if (isDebugEnabled) {
