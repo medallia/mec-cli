@@ -45,6 +45,11 @@ export class TranslationsService extends BaseService {
       `${EMOJIS.LOADING} Downloading translations for survey: ${options.survey.name} (${options.survey.id}) ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
     );
 
+    if (options.survey.translation_tag_id === null) {
+      log.error(`${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${options.survey.name} (${options.survey.id})`);
+      return Promise.reject(new ValidationError('No survey version found'));
+    }
+
     // Start export job
     const exportResponse = await this.httpClient.request<TranslationExportResponse>({
       method: 'POST',
