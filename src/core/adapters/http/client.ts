@@ -12,7 +12,7 @@ export class HttpClient {
 
   constructor(baseURL: string, options: { enableAuth?: boolean } = {}) {
     const { enableAuth = true } = options;
-    
+
     this.baseURL = baseURL;
     this.client = axios.create({
       baseURL,

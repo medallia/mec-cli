@@ -46,7 +46,9 @@ export class TranslationsService extends BaseService {
     );
 
     if (options.survey.translation_tag_id === null) {
-      log.error(`${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${options.survey.name} (${options.survey.id})`);
+      log.error(
+        `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${options.survey.name} (${options.survey.id})`
+      );
       return Promise.reject(new ValidationError('No survey version found'));
     }
 
@@ -95,7 +97,10 @@ export class TranslationsService extends BaseService {
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
     const simplifiedTranslationsFileName = `${options.survey.id}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
-    const simplifiedTranslationsFilePath = PathUtils.join(options.outputPath, simplifiedTranslationsFileName);
+    const simplifiedTranslationsFilePath = PathUtils.join(
+      options.outputPath,
+      simplifiedTranslationsFileName
+    );
     const rawTranslationsFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
     const rawTranslationsFilePath = isDebugEnabled
       ? PathUtils.join(options.outputPath, rawTranslationsFileName)

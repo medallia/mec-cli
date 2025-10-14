@@ -110,7 +110,9 @@ export class VersionService {
     try {
       // Create HTTP client without authentication for public GitHub API
       // Using full URL as base makes it cleaner
-      const httpClient = this.httpAdapter.createUnauthenticatedClient(VERSION_CHECK.GITHUB_API_LATEST_RELEASE_URL);
+      const httpClient = this.httpAdapter.createUnauthenticatedClient(
+        VERSION_CHECK.GITHUB_API_LATEST_RELEASE_URL
+      );
 
       const response = await httpClient.request<GitHubReleaseResponse>({
         method: 'GET',
@@ -163,15 +165,19 @@ export class VersionService {
       const scriptPath = process.argv[1];
 
       // Check for npm global installation first (more specific)
-      if (INSTALLATION_PATHS.NODE_EXECUTABLE.some(path => execPath.includes(path)) || 
-          INSTALLATION_PATHS.NODE_MODULES.some(path => scriptPath?.includes(path))) {
+      if (
+        INSTALLATION_PATHS.NODE_EXECUTABLE.some(path => execPath.includes(path)) ||
+        INSTALLATION_PATHS.NODE_MODULES.some(path => scriptPath?.includes(path))
+      ) {
         return 'npm';
       }
 
       // Check script/execution paths for Homebrew installation
-      if (INSTALLATION_PATHS.HOMEBREW.some(path => 
-        execPath.includes(path) || scriptPath?.includes(path)
-      )) {
+      if (
+        INSTALLATION_PATHS.HOMEBREW.some(
+          path => execPath.includes(path) || scriptPath?.includes(path)
+        )
+      ) {
         return 'homebrew';
       }
 
@@ -207,13 +213,13 @@ export class VersionService {
 
       const content = this.fsAdapter.readFileSync(this.cacheFilePath);
       const cache = JSON.parse(content) as VersionCheckCache;
-      
+
       // Validate cache structure
       if (!cache.lastCheckTime || !cache.versionInfo) {
         log.warn('[VersionService] Invalid cache structure, ignoring cache');
         return null;
       }
-      
+
       return cache;
     } catch (error) {
       log.warn('[VersionService] Failed to load version check cache:', error);

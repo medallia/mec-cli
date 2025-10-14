@@ -7,7 +7,8 @@ export class ProgressFormatter {
   private interval?: NodeJS.Timeout;
 
   startSpinner(message: string): void {
-    if (!isVerboseEnabled) { // Don't show spinner if verbose mode is enabled
+    if (!isVerboseEnabled) {
+      // Don't show spinner if verbose mode is enabled
       process.stdout.write(`${message} `);
 
       this.interval = setInterval(() => {
