@@ -58,9 +58,13 @@ export class FileSystemAdapter {
     return PathUtils.ensureDirectory(dirPath);
   }
 
+  realpathSync(binPath: string) {
+    return fs.realpathSync(binPath);
+  }
+
   // Additional file operations for general use
-  readFileSync(filePath: string): Buffer {
-    return fs.readFileSync(filePath);
+  readFileSync(filePath: string, encoding: BufferEncoding = 'utf-8'): string {
+    return fs.readFileSync(filePath, encoding);
   }
 
   writeFileSync(filePath: string, data: Buffer | string, encoding?: string): void {

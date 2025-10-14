@@ -1,6 +1,6 @@
 import { APP_NAME, COMMANDS, EMOJIS } from '../core/config/constants';
 import { ProfileManager } from '../core/config/profiles';
-import { ProfileConfig, ProfileSummary } from '../core/config/types';
+import { ProfileConfig, ProfileSummary, VersionInfo } from '../core/config/types';
 import { SurveyItem } from '../core/services/surveys/types';
 import { TranslationImportChangesItem } from '../core/services/translations/types';
 
@@ -103,6 +103,15 @@ export class UI {
 
     console.log(Colors.info(`\n${EMOJIS.SURVEY} Translation Change Stats:`));
     this.table.displayTranslationChangesStatsTable(changes);
+  }
+
+  // Version updates
+  displayVersionUpdate(versionInfo: VersionInfo): void {
+    if (!versionInfo.updateAvailable) {
+      return;
+    }
+
+    this.table.displayVersionUpdate(versionInfo);
   }
 
   // Simple output methods

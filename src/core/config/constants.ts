@@ -7,6 +7,17 @@ export const APP_REPOSITORY = 'https://github.com/medallia/mec-cli';
 // File and Directory Configuration
 export const CONFIG_DIR_NAME = '.mec';
 export const PROFILES_FILE_NAME = 'profiles';
+export const VERSION_CACHE_FILE_NAME = 'version-check';
+
+// App Version Check for update notifications
+export const VERSION_CHECK = {
+  // Check interval for latest updates from the API in secs (default: 1 hour)
+  CHECK_INTERVAL_SECS: parseInt('3600', 10), // 1 hour
+  // Silence alert duration in secs (default: 24 hours)
+  SILENCE_ALERT_DURATION_SECS: parseInt('86400', 10), // 24 hours
+  // GitHub API endpoint for latest release
+  GITHUB_API_LATEST_RELEASE_URL: 'https://api.github.com/repos/medallia/mec-cli/releases/latest',
+} as const;
 
 // Command Names
 export const COMMANDS = {

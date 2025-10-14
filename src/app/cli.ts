@@ -1,5 +1,6 @@
 import { CommandRegistry } from '../commands';
 import { CoreContainer } from '../core';
+import { VersionService } from '../core/config';
 import { UI } from '../ui';
 import { handleError } from '../utils/errors';
 
@@ -25,6 +26,9 @@ export class CLIApplication {
       // Initialize core services
       await this.coreContainer.initialize();
 
+      // Check for version updates (non-blocking)
+      this.checkForUpdates();
+
       // Execute command (yargs handles all parsing and validation)
       await this.commandRegistry.execute();
     } catch (error) {
@@ -34,5 +38,30 @@ export class CLIApplication {
       this.coreContainer.dispose();
       process.exit(cliError.exitCode);
     }
+  }
+
+  /**
+   * Check for version updates in the background
+   */
+  private checkForUpdates(): void {
+    // Run version check asynchronously without blocking
+    const versionService = new VersionService();
+
+    versionService
+      .checkVersionWithCache()
+      .then(async versionInfo => {
+        if (versionInfo?.updateAvailable) {
+          // Check if we should show the alert (respects silence duration)
+          const shouldShow = await versionService.shouldShowAlert(versionInfo);
+          if (shouldShow) {
+            this.ui.displayVersionUpdate(versionInfo);
+            // Mark that we've shown the alert
+            await versionService.markAlertShown();
+          }
+        }
+      })
+      .catch(() => {
+        // Silently fail - version check errors are logged but don't block CLI execution
+      });
   }
 }

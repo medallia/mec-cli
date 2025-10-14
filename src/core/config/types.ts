@@ -44,3 +44,30 @@ export interface ProfileSummary {
   languages?: string;
   includeHtmlBlocks?: boolean;
 }
+
+// Installation method type
+export type InstallationMethod = 'npm' | 'homebrew' | 'standalone-binary' | 'unknown';
+
+// Version check information
+export interface VersionInfo {
+  currentVersion: string;
+  latestVersion: string;
+  updateAvailable: boolean;
+  installationMethod: InstallationMethod;
+  changelogUrl: string;
+  updateCommand: string;
+}
+
+// Version check cache data
+export interface VersionCheckCache {
+  lastCheckTime: number;
+  lastAlertShownTime?: number;
+  versionInfo: VersionInfo;
+}
+
+export interface GitHubReleaseResponse {
+  tag_name: string;
+  name: string;
+  published_at: string;
+  body: string;
+}

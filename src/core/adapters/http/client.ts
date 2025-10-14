@@ -10,7 +10,9 @@ export class HttpClient {
   private client: AxiosInstance;
   private baseURL: string;
 
-  constructor(baseURL: string) {
+  constructor(baseURL: string, options: { enableAuth?: boolean } = {}) {
+    const { enableAuth = true } = options;
+    
     this.baseURL = baseURL;
     this.client = axios.create({
       baseURL,
@@ -21,7 +23,13 @@ export class HttpClient {
       },
     });
 
-    this.setupInterceptors();
+    if (enableAuth) {
+      this.setupInterceptors();
+    }
+  }
+
+  static createUnauthenticated(baseURL: string): HttpClient {
+    return new HttpClient(baseURL, { enableAuth: false });
   }
 
   private setupInterceptors(): void {
