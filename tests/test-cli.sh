@@ -81,7 +81,7 @@ echo -e "\n${BLUE}Starting CLI tests...${NC}"
 
 # Basic Help and Version Tests
 run_test_with_output "General Help" "npm run dev -- --help" "mec <command>"
-run_test_with_output "Version Information" "npm run dev -- --version" "1.0.0"
+run_test_with_output "Version Information" "npm run dev -- --version" "1.1.0"
 
 # Configure Command Tests
 run_test_with_output "Configure Help" "npm run dev -- configure --help" "Configure profile"

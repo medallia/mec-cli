@@ -1,6 +1,8 @@
+import packageJson from '../../../package.json';
+
 // App Information
 export const APP_NAME = 'mec';
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = packageJson.version;
 export const APP_DESCRIPTION = 'A CLI tool for MEC (Medallia Experience Cloud) operations';
 export const APP_REPOSITORY = 'https://github.com/medallia/mec-cli';
 
