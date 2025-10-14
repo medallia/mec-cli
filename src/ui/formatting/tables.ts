@@ -247,7 +247,7 @@ export class TableFormatter {
     rows[Colors.accent('Current Version')] = Colors.tableContent(versionInfo.currentVersion);
     rows[Colors.accent('Latest Version')] = Colors.success(versionInfo.latestVersion);
     rows[Colors.accent('Changelog')] = Colors.link(versionInfo.changelogUrl);
-    rows[Colors.accent('To Update')] = Colors.info(versionInfo.updateCommand);
+    rows[Colors.accent('To Update')] = Colors.info(versionInfo.updateInstruction);
 
     Object.entries(rows).forEach(([key, value]) => {
       const row: Record<string, string> = {};

@@ -74,7 +74,7 @@ export class VersionService {
     try {
       const latestVersion = await this.getLatestVersionFromGitHub();
       const installationMethod = this.detectInstallationMethod();
-      const updateCommand = this.getUpdateInstruction(installationMethod);
+      const updateInstruction = this.getUpdateInstruction(installationMethod);
       const isOutdated = this.isVersionOutdated(currentVersion, latestVersion);
 
       return {
@@ -83,13 +83,13 @@ export class VersionService {
         updateAvailable: isOutdated,
         installationMethod,
         changelogUrl: `${githubReleaseUrl}/tag/v${latestVersion}`,
-        updateCommand,
+        updateInstruction,
       };
     } catch (error) {
       log.warn('[VersionService] Version check failed:', error);
 
       const installationMethod = this.detectInstallationMethod();
-      const updateCommand = this.getUpdateInstruction(installationMethod);
+      const updateInstruction = this.getUpdateInstruction(installationMethod);
 
       // Return safe defaults if version check fails
       return {
@@ -98,7 +98,7 @@ export class VersionService {
         updateAvailable: false,
         installationMethod,
         changelogUrl: githubReleaseUrl,
-        updateCommand,
+        updateInstruction,
       };
     }
   }

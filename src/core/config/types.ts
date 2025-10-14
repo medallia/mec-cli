@@ -55,7 +55,7 @@ export interface VersionInfo {
   updateAvailable: boolean;
   installationMethod: InstallationMethod;
   changelogUrl: string;
-  updateCommand: string;
+  updateInstruction: string;
 }
 
 // Version check cache data
