@@ -9,6 +9,9 @@ import { PathUtils } from './paths';
 import { FileValidator } from './validation';
 
 export class FileSystemAdapter {
+  private readonly OWNER_READ_WRITE_ONLY = 0o600 as const; // Owner can read/write, others have no access
+  private readonly UTF8_ENCODING = 'utf-8' as const;
+
   private getProfilesPath(): string {
     return path.join(os.homedir(), CONFIG_DIR_NAME, PROFILES_FILE_NAME);
   }
@@ -23,12 +26,11 @@ export class FileSystemAdapter {
 
   async ensureSecureProfilesFile(): Promise<void> {
     const profilesPath = this.getProfilesPath();
-    const ownerReadWriteOnly = 0o600; // Owner can read/write, others have no access
 
     if (fs.existsSync(profilesPath)) {
-      fs.chmodSync(profilesPath, ownerReadWriteOnly);
+      fs.chmodSync(profilesPath, this.OWNER_READ_WRITE_ONLY);
     } else {
-      fs.writeFileSync(profilesPath, '', { mode: ownerReadWriteOnly });
+      fs.writeFileSync(profilesPath, '', { mode: this.OWNER_READ_WRITE_ONLY });
     }
   }
 
@@ -39,7 +41,7 @@ export class FileSystemAdapter {
       return {};
     }
 
-    const content = fs.readFileSync(profilesPath, 'utf-8');
+    const content = fs.readFileSync(profilesPath, this.UTF8_ENCODING);
     return this.parseINI(content);
   }
 
@@ -47,7 +49,7 @@ export class FileSystemAdapter {
     const profilesPath = this.getProfilesPath();
     const content = this.serializeToINI(profiles);
 
-    fs.writeFileSync(profilesPath, content, 'utf-8');
+    fs.writeFileSync(profilesPath, content, this.UTF8_ENCODING);
   }
 
   async validateExcelFile(filePath: string): Promise<boolean> {
@@ -58,13 +60,25 @@ export class FileSystemAdapter {
     return PathUtils.ensureDirectory(dirPath);
   }
 
+  realpathSync(binPath: string) {
+    return fs.realpathSync(binPath);
+  }
+
   // Additional file operations for general use
-  readFileSync(filePath: string): Buffer {
-    return fs.readFileSync(filePath);
+  readFileSync(filePath: string, encoding: BufferEncoding = 'utf-8'): string {
+    return fs.readFileSync(filePath, encoding);
   }
 
   writeFileSync(filePath: string, data: Buffer | string, encoding?: string): void {
     fs.writeFileSync(filePath, data, encoding as fs.WriteFileOptions);
+  }
+
+  writeSecureJsonSync(filePath: string, data: unknown): void {
+    const jsonContent = JSON.stringify(data, null, 2);
+    fs.writeFileSync(filePath, jsonContent, {
+      encoding: this.UTF8_ENCODING,
+      mode: this.OWNER_READ_WRITE_ONLY,
+    });
   }
 
   existsSync(filePath: string): boolean {

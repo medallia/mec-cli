@@ -7,6 +7,17 @@ export const APP_REPOSITORY = 'https://github.com/medallia/mec-cli';
 // File and Directory Configuration
 export const CONFIG_DIR_NAME = '.mec';
 export const PROFILES_FILE_NAME = 'profiles';
+export const VERSION_CACHE_FILE_NAME = 'version-check';
+
+// App Version Check for update notifications
+export const VERSION_CHECK = {
+  // Check interval for latest updates from the API in secs (default: 1 hour)
+  CHECK_INTERVAL_SECS: parseInt('3600', 10), // 1 hour
+  // Silence alert duration in secs (default: 24 hours)
+  SILENCE_ALERT_DURATION_SECS: parseInt('86400', 10), // 24 hours
+  // GitHub API endpoint for latest release
+  GITHUB_API_LATEST_RELEASE_URL: 'https://api.github.com/repos/medallia/mec-cli/releases/latest',
+} as const;
 
 // Command Names
 export const COMMANDS = {
@@ -32,6 +43,13 @@ export const SUB_COMMANDS = {
   },
 } as const;
 
+// Shared CLI Options (used across multiple commands)
+const SHARED_CLI_OPTIONS = {
+  INCLUDE_HTML_BLOCKS: 'include-html-blocks',
+  LANGUAGES: 'languages',
+  OUTPUT_PATH: 'output-path',
+} as const;
+
 // CLI Options
 export const CLI_OPTIONS = {
   PREFIX: '--',
@@ -40,8 +58,6 @@ export const CLI_OPTIONS = {
   WITH_SHORTHAND_PREFIX: (name: string) => `${CLI_OPTIONS.SHORTHAND_PREFIX}${name}`,
   HELP: 'help',
   HELP_SHORT: 'h',
-  VERSION: 'version',
-  VERSION_SHORT: 'v',
   VERBOSE: 'verbose',
   VERBOSE_SHORT: 'v',
   DEBUG: 'debug',
@@ -56,9 +72,9 @@ export const CLI_OPTIONS = {
     OAUTH_CLIENT_ID: 'client-id',
     OAUTH_CLIENT_SECRET: 'client-secret',
     API_GATEWAY_URL: 'api-gateway-url',
-    OUTPUT_PATH: 'output-path',
-    LANGUAGES: 'languages',
-    INCLUDE_HTML_BLOCKS: 'include-html-blocks',
+    OUTPUT_PATH: SHARED_CLI_OPTIONS.OUTPUT_PATH,
+    LANGUAGES: SHARED_CLI_OPTIONS.LANGUAGES,
+    INCLUDE_HTML_BLOCKS: SHARED_CLI_OPTIONS.INCLUDE_HTML_BLOCKS,
   },
   SURVEYS: {
     NAME: 'name',
@@ -69,9 +85,9 @@ export const CLI_OPTIONS = {
     DRY_RUN: 'dry-run',
     SAVE_DEBUG_FILES: 'save-debug-files',
     FILE: 'file',
-    INCLUDE_HTML_BLOCKS: 'include-html-blocks', // TODO: Refer to profile
-    LANGUAGES: 'languages', // TODO: Refer to profile
-    OUTPUT_PATH: 'output-path',
+    INCLUDE_HTML_BLOCKS: SHARED_CLI_OPTIONS.INCLUDE_HTML_BLOCKS,
+    LANGUAGES: SHARED_CLI_OPTIONS.LANGUAGES,
+    OUTPUT_PATH: SHARED_CLI_OPTIONS.OUTPUT_PATH,
     SURVEY_NAME: 'survey-name',
     SURVEY_UUID: 'survey-uuid',
   },
@@ -170,7 +186,6 @@ export const FILE_EXTENSIONS = {
   INI: '.ini',
 };
 
-// TODO - Check limits with Alan
 // File Size Limits
 export const FILE_SIZE_LIMITS = {
   MAX_CONFIG_FILE_SIZE: 1024 * 1024, // 1MB

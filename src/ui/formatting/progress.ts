@@ -1,4 +1,5 @@
 import { EMOJIS, UI_SETTINGS } from '../../core/config/constants';
+import { isVerboseEnabled } from '../../utils';
 import { Colors } from './colors';
 
 export class ProgressFormatter {
@@ -6,14 +7,17 @@ export class ProgressFormatter {
   private interval?: NodeJS.Timeout;
 
   startSpinner(message: string): void {
-    process.stdout.write(`${message} `);
+    if (!isVerboseEnabled) {
+      // Don't show spinner if verbose mode is enabled
+      process.stdout.write(`${message} `);
 
-    this.interval = setInterval(() => {
-      process.stdout.write(
-        `\r${message} ${Colors.info(UI_SETTINGS.SPINNER_CHARS[this.spinnerIndex])}`
-      );
-      this.spinnerIndex = (this.spinnerIndex + 1) % UI_SETTINGS.SPINNER_CHARS.length;
-    }, UI_SETTINGS.SPINNER_INTERVAL);
+      this.interval = setInterval(() => {
+        process.stdout.write(
+          `\r${message} ${Colors.info(UI_SETTINGS.SPINNER_CHARS[this.spinnerIndex])}`
+        );
+        this.spinnerIndex = (this.spinnerIndex + 1) % UI_SETTINGS.SPINNER_CHARS.length;
+      }, UI_SETTINGS.SPINNER_INTERVAL);
+    }
   }
 
   stopSpinner(message?: string): void {

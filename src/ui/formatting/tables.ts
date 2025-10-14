@@ -9,9 +9,11 @@ import {
   PROFILE_DEFAULTS,
   SUB_COMMANDS,
 } from '../../core/config/constants';
+import { VersionInfo } from '../../core/config/types';
 import { SurveyItem } from '../../core/services/surveys/types';
 import { TranslationImportChangesItem } from '../../core/services/translations/types';
 import { maskSecret } from '../../utils/helpers';
+
 import { Colors } from './colors';
 
 export class TableFormatter {
@@ -226,6 +228,35 @@ export class TableFormatter {
       table.push([Colors.tableContent(type), Colors.tableIndex(count.toString())]);
     });
 
+    console.log(table.toString());
+  }
+
+  /**
+   * Version Information
+   */
+  displayVersionUpdate(versionInfo: VersionInfo): void {
+    const table = new Table({
+      style: {
+        head: [],
+        border: ['gray'],
+      },
+    });
+
+    // Add version information rows
+    const rows: Record<string, string> = {};
+    rows[Colors.accent('Current Version')] = Colors.tableContent(versionInfo.currentVersion);
+    rows[Colors.accent('Latest Version')] = Colors.success(versionInfo.latestVersion);
+    rows[Colors.accent('Changelog')] = Colors.link(versionInfo.changelogUrl);
+    rows[Colors.accent('To Update')] = Colors.info(versionInfo.updateInstruction);
+
+    Object.entries(rows).forEach(([key, value]) => {
+      const row: Record<string, string> = {};
+      row[key] = value;
+      table.push(row);
+    });
+
+    console.log('');
+    console.log(`${EMOJIS.INFO}  ${Colors.warning('A new version is available!')}`);
     console.log(table.toString());
   }
 }
