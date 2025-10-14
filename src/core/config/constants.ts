@@ -43,6 +43,13 @@ export const SUB_COMMANDS = {
   },
 } as const;
 
+// Shared CLI Options (used across multiple commands)
+const SHARED_CLI_OPTIONS = {
+  INCLUDE_HTML_BLOCKS: 'include-html-blocks',
+  LANGUAGES: 'languages',
+  OUTPUT_PATH: 'output-path',
+} as const;
+
 // CLI Options
 export const CLI_OPTIONS = {
   PREFIX: '--',
@@ -51,8 +58,6 @@ export const CLI_OPTIONS = {
   WITH_SHORTHAND_PREFIX: (name: string) => `${CLI_OPTIONS.SHORTHAND_PREFIX}${name}`,
   HELP: 'help',
   HELP_SHORT: 'h',
-  VERSION: 'version',
-  VERSION_SHORT: 'v',
   VERBOSE: 'verbose',
   VERBOSE_SHORT: 'v',
   DEBUG: 'debug',
@@ -67,9 +72,9 @@ export const CLI_OPTIONS = {
     OAUTH_CLIENT_ID: 'client-id',
     OAUTH_CLIENT_SECRET: 'client-secret',
     API_GATEWAY_URL: 'api-gateway-url',
-    OUTPUT_PATH: 'output-path',
-    LANGUAGES: 'languages',
-    INCLUDE_HTML_BLOCKS: 'include-html-blocks',
+    OUTPUT_PATH: SHARED_CLI_OPTIONS.OUTPUT_PATH,
+    LANGUAGES: SHARED_CLI_OPTIONS.LANGUAGES,
+    INCLUDE_HTML_BLOCKS: SHARED_CLI_OPTIONS.INCLUDE_HTML_BLOCKS,
   },
   SURVEYS: {
     NAME: 'name',
@@ -80,9 +85,9 @@ export const CLI_OPTIONS = {
     DRY_RUN: 'dry-run',
     SAVE_DEBUG_FILES: 'save-debug-files',
     FILE: 'file',
-    INCLUDE_HTML_BLOCKS: 'include-html-blocks', // TODO: Refer to profile
-    LANGUAGES: 'languages', // TODO: Refer to profile
-    OUTPUT_PATH: 'output-path',
+    INCLUDE_HTML_BLOCKS: SHARED_CLI_OPTIONS.INCLUDE_HTML_BLOCKS,
+    LANGUAGES: SHARED_CLI_OPTIONS.LANGUAGES,
+    OUTPUT_PATH: SHARED_CLI_OPTIONS.OUTPUT_PATH,
     SURVEY_NAME: 'survey-name',
     SURVEY_UUID: 'survey-uuid',
   },
@@ -181,7 +186,6 @@ export const FILE_EXTENSIONS = {
   INI: '.ini',
 };
 
-// TODO - Check limits with Alan
 // File Size Limits
 export const FILE_SIZE_LIMITS = {
   MAX_CONFIG_FILE_SIZE: 1024 * 1024, // 1MB

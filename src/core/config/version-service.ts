@@ -12,14 +12,13 @@ import {
 } from './constants';
 import { VersionInfo, VersionCheckCache, InstallationMethod, GitHubReleaseResponse } from './types';
 
-// Constants for installation path detection
-const INSTALLATION_PATHS = {
-  HOMEBREW: ['/opt/homebrew', '/usr/local/Cellar', '/homebrew/'],
-  NODE_MODULES: ['node_modules'],
-  NODE_EXECUTABLE: ['node'],
-} as const;
-
 export class VersionService {
+  private readonly INSTALLATION_PATHS = {
+    HOMEBREW: ['/opt/homebrew', '/usr/local/Cellar', '/homebrew/'],
+    NODE_MODULES: ['node_modules'],
+    NODE_EXECUTABLE: ['node'],
+  } as const;
+
   private fsAdapter: FileSystemAdapter;
   private httpAdapter: HttpAdapter;
   private cacheFilePath: string;
@@ -166,15 +165,15 @@ export class VersionService {
 
       // Check for npm global installation first (more specific)
       if (
-        INSTALLATION_PATHS.NODE_EXECUTABLE.some(path => execPath.includes(path)) ||
-        INSTALLATION_PATHS.NODE_MODULES.some(path => scriptPath?.includes(path))
+        this.INSTALLATION_PATHS.NODE_EXECUTABLE.some(path => execPath.includes(path)) ||
+        this.INSTALLATION_PATHS.NODE_MODULES.some(path => scriptPath?.includes(path))
       ) {
         return 'npm';
       }
 
       // Check script/execution paths for Homebrew installation
       if (
-        INSTALLATION_PATHS.HOMEBREW.some(
+        this.INSTALLATION_PATHS.HOMEBREW.some(
           path => execPath.includes(path) || scriptPath?.includes(path)
         )
       ) {
@@ -236,7 +235,7 @@ export class VersionService {
       await this.fsAdapter.ensureConfigDirectory();
 
       // Write cache file
-      this.fsAdapter.writeFileSync(this.cacheFilePath, JSON.stringify(cache, null, 2), 'utf-8');
+      this.fsAdapter.writeSecureJsonSync(this.cacheFilePath, cache);
     } catch (error) {
       log.warn('[VersionService] Failed to save version check cache:', error);
     }
