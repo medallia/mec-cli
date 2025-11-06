@@ -4,12 +4,39 @@ This application is a reference implementation for interacting with Medallia Exp
 
 ## Quick Start
 
-### Prerequisites
+### Installation
+
+#### Standard User Installation
+
+**Prerequisites:**
+- [Homebrew](https://brew.sh/) (macOS/Linux package manager)
+
+Install via Homebrew for the easiest setup:
+
+```bash
+# Add the Medallia tap
+brew tap medallia/mec-cli
+
+# Install mec
+brew install mec
+
+# Verify installation
+mec --help
+```
+
+To upgrade to the latest version:
+```bash
+brew upgrade mec
+```
+
+#### Developer Installation
+
+**Prerequisites:**
 - [Node.js](https://nodejs.org/) (version 20 or higher)
 - [npm](https://www.npmjs.com/) (version 11 or higher; comes with Node.js)
 - [Git](https://git-scm.com/) (for cloning the repository)
 
-### Installation
+For contributing to the project or local development:
 
 ```bash
 # Clone the repository
@@ -23,7 +50,8 @@ npm run build
 # Verify installation
 ./bin/mec --help
 ```
-> **Tip:** For local development, add `./bin` to your `PATH` or create an alias for easier use:
+
+> **Developer Tip:** For local development, add `./bin` to your `PATH` or create an alias for easier use:
 >
 > ```bash
 > # For bash users
@@ -35,7 +63,7 @@ npm run build
 >
 > After this, you can run `mec` from anywhere in your terminal.
 >
-> **Note:** Remove the alias or PATH modification before installing via package managers (like `brew install`), as they automatically add `mec` to your PATH and may conflict with local development setup.
+> **Note:** If you later install via Homebrew, remove the alias or PATH modification as `brew install mec` automatically adds `mec` to your PATH.
 
 ### Configuration
 
