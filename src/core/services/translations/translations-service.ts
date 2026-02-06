@@ -9,7 +9,7 @@ import { API_DEFAULTS, EMOJIS, ERROR_CODES, FILE_EXTENSIONS } from '../../config
 import { Profile } from '../../config/types';
 import { BaseService } from '../base';
 import { SurveysService } from '../surveys';
-import { SurveyFlatViewResponse } from '../surveys/types';
+import { SurveyFlatViewResponse, WhereUsedInfo } from '../surveys/types';
 
 import { TRANSLATIONS_ENDPOINTS, TRANSLATIONS_STATUS, FILE_PROCESSING } from './constants';
 import {
@@ -42,14 +42,16 @@ export class TranslationsService extends BaseService {
   ): Promise<TranslationDownloadResult> {
     const isDebugEnabled = options.saveDebugFiles;
     log.info(
-      `${EMOJIS.LOADING} Downloading translations for survey: ${options.survey.name} (${options.survey.id}) ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
+      `${EMOJIS.LOADING} Downloading translations for survey(s): ${options.surveys.map(survey => `${survey.name} (${survey.id})`).join(', ')} ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
     );
-
-    if (options.survey.translation_tag_id === null) {
-      log.error(
-        `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${options.survey.name} (${options.survey.id})`
-      );
-      return Promise.reject(new ValidationError('No survey version found'));
+    
+    for (const survey of options.surveys) {
+      if (survey.translation_tag_id === null) {
+        log.error(
+          `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${survey.name} (${survey.id})`
+        );
+        return Promise.reject(new ValidationError(`No survey version found for: ${survey.name} (${survey.id})`));
+      }
     }
 
     // Start export job
@@ -59,7 +61,7 @@ export class TranslationsService extends BaseService {
       data: {
         type: 'translation-export',
         file_format: 'excel',
-        translation_tag_ids: [{ id: `${options.survey.translation_tag_id}` }],
+        translation_tag_ids: options.surveys.map(survey => ({ id: `${survey.translation_tag_id}` })),
         translation_locale_ids: [],
         translation_categories: [
           'questions',
@@ -83,12 +85,12 @@ export class TranslationsService extends BaseService {
       'Export'
     );
 
-    const flatViewPromise = this.surveysService.getSurveyFlatView(options.survey.id);
+    const flatViewPromises = options.surveys.map(survey => this.surveysService.getSurveyFlatView(survey.id));
 
     // Wait for both operations to complete
-    const [, surveyFlatViewResponse] = await Promise.all([
+    const [, surveyFlatViewResponses] = await Promise.all([
       exportCompletionPromise,
-      flatViewPromise,
+      Promise.all(flatViewPromises),
     ]);
 
     // Generate file paths
@@ -96,24 +98,29 @@ export class TranslationsService extends BaseService {
       .toISOString()
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
-    const simplifiedTranslationsFileName = `${options.survey.id}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
+    const surveyIdsPart = options.surveys.map(survey => survey.id).join('_');
+    const simplifiedTranslationsFileName = `${surveyIdsPart}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
     const simplifiedTranslationsFilePath = PathUtils.join(
       options.outputPath,
       simplifiedTranslationsFileName
     );
-    const rawTranslationsFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
+    const rawTranslationsFileName = `${surveyIdsPart}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
     const rawTranslationsFilePath = isDebugEnabled
       ? PathUtils.join(options.outputPath, rawTranslationsFileName)
       : this.fsAdapter.getTempFilePath(rawTranslationsFileName);
-    const surveyFlatViewFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.SURVEY_SPEC_SUFFIX}${FILE_EXTENSIONS.JSON}`;
-    if (isDebugEnabled) {
-      const surveyFlatViewFilePath = PathUtils.join(options.outputPath, surveyFlatViewFileName);
-      this.fsAdapter.writeFileSync(
-        surveyFlatViewFilePath,
-        JSON.stringify(surveyFlatViewResponse, null, 2)
-      );
-      log.info(`${EMOJIS.FILE} Survey spec file saved to: ${surveyFlatViewFilePath}`);
-    }
+
+    options.surveys.forEach((survey, index) => {
+      const surveyFlatViewResponse = surveyFlatViewResponses[index];
+      const surveyFlatViewFileName = `${survey.id}-${timestamp}-${FILE_PROCESSING.SURVEY_SPEC_SUFFIX}${FILE_EXTENSIONS.JSON}`;
+      if (isDebugEnabled) {
+        const surveyFlatViewFilePath = PathUtils.join(options.outputPath, surveyFlatViewFileName);
+        this.fsAdapter.writeFileSync(
+          surveyFlatViewFilePath,
+          JSON.stringify(surveyFlatViewResponse, null, 2)
+        );
+        log.info(`${EMOJIS.FILE} Survey spec file saved to: ${surveyFlatViewFilePath}`);
+      }
+    });
 
     try {
       // Download file
@@ -138,13 +145,13 @@ export class TranslationsService extends BaseService {
         requestedLanguages,
         missingLanguages,
         options,
-        surveyFlatViewResponse
+        surveyFlatViewResponses
       );
 
       this.cleanupTempFile(rawTranslationsFilePath, isDebugEnabled);
 
       log.info(
-        `${EMOJIS.SUCCESS} Downloaded ${simplifiedTranslationsFilePath.split('/').pop()} translations for survey: ${options.survey.name}`
+        `${EMOJIS.SUCCESS} Downloaded ${simplifiedTranslationsFilePath.split('/').pop()} translations for survey(s): ${options.surveys.map(s => s.name).join(', ')}`
       );
 
       return {
@@ -177,7 +184,7 @@ export class TranslationsService extends BaseService {
     languages: string[],
     missingLanguages: string[],
     options: DownloadTranslationsOptions,
-    surveyFlatViewResponse: SurveyFlatViewResponse
+    surveyFlatViewResponses: SurveyFlatViewResponse[]
   ): Promise<string> {
     try {
       // Read input file
@@ -234,8 +241,33 @@ export class TranslationsService extends BaseService {
         throw new ValidationError('Required columns (Key, Original text) not found');
       }
 
-      // Build "Where Used" mapping using pre-fetched data
-      const whereUsedMap = await this.surveysService.buildWhereUsedMap(surveyFlatViewResponse);
+      // Build "Where Used" mapping using pre-fetched data with survey names
+      // Combine all whereUsed maps into a single map
+      const combinedWhereUsedMap = new Map<string, WhereUsedInfo>();
+      const keyLocationMap = new Map<string, { locations: string[], type?: string }>();
+
+      surveyFlatViewResponses.forEach((surveyFlatViewResponse, index) => {
+        const surveyName = options.surveys[index].name;
+        const whereUsedMap = this.surveysService.buildWhereUsedMap(surveyName, surveyFlatViewResponse);
+        
+        // Process each key from the pre-built map
+        whereUsedMap.forEach((result, key) => {
+          if (!result.location.includes('Unknown')) {
+            if (!keyLocationMap.has(key)) {
+              keyLocationMap.set(key, { locations: [], type: result.type });
+            }
+            keyLocationMap.get(key)!.locations.push(result.location);
+          }
+        });
+      });
+
+      // Build final combined map with joined locations
+      keyLocationMap.forEach((value, key) => {
+        combinedWhereUsedMap.set(key, {
+          location: value.locations.join('\n'),
+          type: value.type || 'unknown'
+        });
+      });
 
       // Filter rows
       const filteredRows: (string | number | undefined)[][] = [];
@@ -262,7 +294,7 @@ export class TranslationsService extends BaseService {
             ? (row.getCell(originalTextColIndex + 1).value?.toString() ?? '')
             : '';
         const keyValue = rowValues[keyColIdx]?.toString() ?? '';
-        const whereUsedInfo = whereUsedMap.get(keyValue);
+        const whereUsedInfo = combinedWhereUsedMap.get(keyValue);
 
         // Skip blank rows
         if (originalTextValue.trim().toLowerCase() === '[blank]') {
@@ -329,14 +361,21 @@ export class TranslationsService extends BaseService {
         column.width = Math.max(headerLength + 2, 12);
       });
 
+      // Set wider width for "Where Used" column to accommodate multi-line content
+      const whereUsedColIndex = outputHeaders.indexOf(-1) + 1;
+      if (whereUsedColIndex > 0) {
+        outputWorksheet.getColumn(whereUsedColIndex).width = 50;
+      }
+
       // Add data rows
       filteredRows.forEach(rowValues => {
         const keyValue = rowValues[keyColIdx]?.toString() ?? '';
         const originalTextValue = rowValues[originalTextColIndex]?.toString() ?? '';
 
-        const whereUsedInfo = whereUsedMap.get(keyValue);
+        const whereUsedInfo = combinedWhereUsedMap.get(keyValue);
         const whereUsedValue = whereUsedInfo?.location || '';
-        const notesToTranslator = this.generateNotesToTranslator(originalTextValue);
+        const usedInMultiplePlaces = whereUsedValue.includes('\n');
+        const notesToTranslator = this.generateNotesToTranslator(originalTextValue, usedInMultiplePlaces);
 
         const outputRow = outputHeaders.map(idx => {
           if (idx === -1) {
@@ -347,7 +386,12 @@ export class TranslationsService extends BaseService {
           }
           return rowValues[idx] ?? '';
         });
-        outputWorksheet.addRow(outputRow);
+        const row = outputWorksheet.addRow(outputRow);
+        
+        // Enable text wrapping for the "Where Used" cell to show line breaks
+        if (whereUsedColIndex > 0 && whereUsedValue.includes('\n')) {
+          row.getCell(whereUsedColIndex).alignment = { wrapText: true, vertical: 'middle' };
+        }
       });
 
       await outputWorkbook.xlsx.writeFile(outputFilePath);
@@ -361,23 +405,32 @@ export class TranslationsService extends BaseService {
   /**
    * Generate notes to translator based on text content
    */
-  private generateNotesToTranslator(text: string): string {
+  private generateNotesToTranslator(text: string, usedInMultiplePlaces: boolean): string {
     if (!text) {
       return '';
     }
 
     const hasHtmlBlocks = TranslationsService.containsHtmlBlocks(text);
     const hasVariables = TranslationsService.containsVariables(text);
+    const notes: string[] = [];
 
+    // Add content type notes
     if (hasHtmlBlocks && hasVariables) {
-      return 'Contains HTML/code and variables - please be mindful of the structure when performing the translation';
+      notes.push('Contains HTML/code and variables');
     } else if (hasHtmlBlocks) {
-      return 'Contains HTML/code - please be mindful of the structure when performing the translation';
+      notes.push('Contains HTML/code');
     } else if (hasVariables) {
-      return 'Contains variable text - please be mindful of the structure when performing the translation';
+      notes.push('Contains variable text');
     }
 
-    return '';
+    // TODO: Add usage note - Remove due to API limitations and not able to idenfity usage for all kes/texts in all surveys.
+    if (usedInMultiplePlaces) {
+      notes.push('Used in multiple surveys');
+    }
+
+    return notes.length > 0
+      ? `${notes.join(' and ')} - please be mindful of the structure when performing the translation.`
+      : '';
   }
 
   /**

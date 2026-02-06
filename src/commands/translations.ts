@@ -38,41 +38,50 @@ export class TranslationsCommand implements ICommand {
 
     switch (subcommand) {
       case SUB_COMMANDS.TRANSLATIONS.DOWNLOAD: {
-        const surveyUuid = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
-        const surveyName = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
+        const surveyUuids = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
+        const surveyNames = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
 
-        if (!surveyUuid && !surveyName) {
+        if (!surveyUuids && !surveyNames) {
           throw new ValidationError(
             `Either ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} or ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} must be provided`
           );
         }
 
-        let survey: SurveyItem;
-        if (surveyUuid) {
-          survey = await surveyService.getSurveyByUuid(surveyUuid);
-        } else {
-          const surveys = await surveyService.getSurveyByName(surveyName!);
-          if (surveys.length > 1) {
-            ui.displaySurveys(surveys, getAdminSurveyEditorUrlById);
-            throw new ValidationError(
-              `More than one survey program found with name: "${surveyName}", please specify a more unique name or use ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)}`
-            );
+        // Collect all surveys to process
+        const surveyItemList: SurveyItem[] = [];
+
+        // Process survey UUIDs
+        if (surveyUuids && surveyUuids.length > 0) {
+          for (const uuid of surveyUuids) {
+            const survey = await surveyService.getSurveyByUuid(uuid as string);
+            if (!survey) {
+              throw new ValidationError(`Survey not found for UUID: "${uuid}"`);
+            }
+            surveyItemList.push(survey);
           }
-          survey = surveys[0];
         }
 
-        if (!survey) {
-          if (surveyName) {
-            throw new ValidationError(`Survey not found for name: "${surveyName}"`);
-          } else {
-            throw new ValidationError(`Survey not found for UUID: "${surveyUuid}"`);
+        // Process survey names
+        if (surveyNames && surveyNames.length > 0) {
+          for (const surveyName of surveyNames) {
+            const surveys = await surveyService.getSurveyByName(surveyName as string);
+            if (surveys.length > 1) {
+              ui.displaySurveys(surveys, getAdminSurveyEditorUrlById);
+              throw new ValidationError(
+                `More than one survey program found with name: "${surveyName}", please specify a more unique name or use ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)}`
+              );
+            }
+            if (surveys.length === 0) {
+              throw new ValidationError(`Survey not found for name: "${surveyName}"`);
+            }
+            surveyItemList.push(surveys[0]);
           }
         }
 
         log.info(`${EMOJIS.DOWNLOAD}  Starting translation download...`);
         ui.formatters.progress.startSpinner('Downloading translations file...');
         const downloadOptions: DownloadTranslationsOptions = {
-          survey: survey,
+          surveys: surveyItemList,
           // Override priority: CLI options (only when provided) > Profile config > Defaults
           languages:
             options[CLI_OPTIONS.TRANSLATIONS.LANGUAGES] ??

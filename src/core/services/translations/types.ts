@@ -1,7 +1,7 @@
 import { SurveyItem } from '../surveys';
 
 export interface DownloadTranslationsOptions {
-  survey: SurveyItem;
+  surveys: SurveyItem[];
   outputPath: string;
   saveDebugFiles: boolean;
   languages: string;

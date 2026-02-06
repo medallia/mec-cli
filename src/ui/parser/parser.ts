@@ -208,13 +208,13 @@ export function createYargsParser() {
             })
             // Download-specific options
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID, {
-              type: 'string',
-              description: 'UUID of the survey program (download only)',
+              type: 'array',
+              description: 'UUID(s) of the survey program(s) (download only). Can specify multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME, {
-              type: 'string',
-              description: 'Name of the survey program (download only)',
+              type: 'array',
+              description: 'Name(s) of the survey program(s) (download only). Can specify multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.LANGUAGES, {
@@ -278,8 +278,16 @@ export function createYargsParser() {
               'Download translations by UUID'
             )
             .example(
+              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} f0473723-45f0-4397-b39e-d2bf3d955a20 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} g0473723-45f0-4397-b39e-d2bf3d955a21 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} h0473723-45f0-4397-b39e-d2bf3d955a22`,
+              'Download translations for multiple surveys by UUID'
+            )
+            .example(
               `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Customer Feedback"`,
               'Download translations by name'
+            )
+            .example(
+              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Customer Feedback" ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Product Survey"`,
+              'Download translations for multiple surveys by name'
             )
             .example(
               `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.UPLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.FILE)}  ./my-translations.xlsx`,

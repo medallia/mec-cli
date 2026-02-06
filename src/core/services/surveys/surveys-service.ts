@@ -9,7 +9,6 @@ import {
   SurveyFlatViewResponse,
   SurveyItem,
   SurveyListResponse,
-  WhereUsedMap,
   WhereUsedInfo,
   SurveyModelItem,
   QuestionField,
@@ -124,8 +123,8 @@ export class SurveysService extends BaseService {
     return response;
   }
 
-  buildWhereUsedMap(surveyFlatViewResponse: SurveyFlatViewResponse): WhereUsedMap {
-    const cache = new Map<string, WhereUsedInfo>();
+  buildWhereUsedMap(surveyName: string, surveyFlatViewResponse: SurveyFlatViewResponse): Map<string, WhereUsedInfo> {
+    const whereUsedMap = new Map<string, WhereUsedInfo>();
 
     // Create lookup maps for better performance
     const surveyModelMap = new Map<string, SurveyModelItem>();
@@ -173,7 +172,7 @@ export class SurveysService extends BaseService {
       const containerPath = buildContainerPath(surveyModelElement.container?.id);
 
       return {
-        location: `${containerPath} > Question ${String(questionNumber).padStart(2, '0')}`,
+        location: `${surveyName} > ${containerPath} > Question ${String(questionNumber).padStart(2, '0')}`,
         type: 'question',
       };
     };
@@ -224,7 +223,7 @@ export class SurveysService extends BaseService {
       const containerPath = buildContainerPath(surveyModelElement.container?.id);
 
       return {
-        location: `${containerPath} > Question ${String(questionNumber).padStart(2, '0')} > Answer ${String(answerNumber).padStart(2, '0')}`,
+        location: `${surveyName} > ${containerPath} > Question ${String(questionNumber).padStart(2, '0')} > Answer ${String(answerNumber).padStart(2, '0')}`,
         type: 'alternative',
       };
     };
@@ -256,7 +255,7 @@ export class SurveysService extends BaseService {
       const containerPath = buildContainerPath(foundElement.container?.id);
 
       return {
-        location: `${containerPath} > ${elementType} ${String(elementNumber).padStart(2, '0')}`,
+        location: `${surveyName} > ${containerPath} > ${elementType} ${String(elementNumber).padStart(2, '0')}`,
         type: foundElement.type,
       };
     };
@@ -359,17 +358,36 @@ export class SurveysService extends BaseService {
       }
     };
 
-    // Build the map by processing all possible translation keys
-    // We'll populate this on-demand when keys are requested
-    return {
-      get: (key: string): WhereUsedInfo => {
-        if (!cache.has(key)) {
-          cache.set(key, resolve(key));
-        }
-        return cache.get(key) ?? { location: 'Unknown Location', type: 'unknown' };
-      },
-      has: (key: string): boolean => cache.has(key),
-      forEach: (fn: (value: WhereUsedInfo, key: string) => void): void => cache.forEach(fn),
-    };
+    // Pre-build the map by processing all possible translation keys upfront
+    // Collect all keys from question fields
+    surveyFlatViewResponse.question_fields.forEach(qf => {
+      if (qf.translation_key && !whereUsedMap.has(qf.translation_key)) {
+        whereUsedMap.set(qf.translation_key, resolve(qf.translation_key));
+      }
+    });
+
+    // Collect keys from alternative sets
+    surveyFlatViewResponse.alternative_sets.forEach(altSet => {
+      if (altSet.alternatives) {
+        altSet.alternatives.forEach(alt => {
+          if (alt.translation_key && !whereUsedMap.has(alt.translation_key)) {
+            whereUsedMap.set(alt.translation_key, resolve(alt.translation_key));
+          }
+        });
+      }
+    });
+
+    // Collect keys from survey model translation keys
+    surveyFlatViewResponse.survey_model.forEach(sm => {
+      if (sm.translation_keys) {
+        sm.translation_keys.forEach(tk => {
+          if (tk['translation-key'] && !whereUsedMap.has(tk['translation-key'])) {
+            whereUsedMap.set(tk['translation-key'], resolve(tk['translation-key']));
+          }
+        });
+      }
+    });
+
+    return whereUsedMap;
   }
 }
