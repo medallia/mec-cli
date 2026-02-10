@@ -67,26 +67,113 @@ npm run build
 
 ### Configuration
 
-Configuration profiles are stored in `${USER_HOME}/.mec/profiles` as a human-readable INI file with secure file permissions (owner read/write only). Profiles can be managed via commands or edited directly in the file.
+Configure authentication and connection settings using profiles. Profiles store your credentials and preferences for connecting to MEC environments.
+
+#### Prerequisites
+
+Before configuring a profile, you need to obtain the following credentials from your MEC instance:
+
+**Required Credentials:**
+
+1. **OAuth Client ID & Secret**
+   - Create an AppID account in MEC
+   - Generate an OAuth Client using the **Client Credentials Grant** type
+   - Note: This client will be used for API authentication
+
+2. **OAuth Token URL**
+   - Retrieved from the OAuth configuration in your MEC instance
+   - Format: `https://{host}/oauth/{realm}/token`
+   - Example: `https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token`
+
+3. **API Gateway URL (Public API Hostname)**
+   - Found under **"Public APIs Setup"** in your MEC instance
+   - Format: `https://{host}.apis.medallia.com`
+   - Example: `https://admin-suite-stable-merlin.apis.medallia.com`
+
+> **Need Help?** Detailed instructions for setting up these credentials are available in the [Medallia documentation](https://docs.medallia.com). If you encounter any issues, please contact your Medallia administrator or support team.
+
+#### Method 1: Interactive Configuration (Recommended)
+
+The interactive mode guides you through setup with prompts:
 
 ```bash
-# Configure your default profile
+# Configure default profile
+mec configure
+
+# Configure named profile
+mec configure --profile "merlin-qa"
+```
+
+Use `--quick` flag to skip optional settings and use defaults:
+```bash
+mec configure --quick
+```
+
+#### Method 2: Command-Line Arguments
+
+Pass all settings directly via command-line flags for non-interactive setup:
+
+```bash
+# Configure default profile
 mec configure \
   --token-url "https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token" \
   --client-id "digital_integration" \
   --client-secret "your-client-secret" \
   --api-gateway-url "https://admin-suite-stable-merlin.apis.medallia.com"
 
-# Create named profiles
+# Configure named profile with optional settings
 mec configure \
   --profile "merlin-qa" \
-  --token-url "..." \
-  --client-id "..." \
-  --client-secret "..." \
-  --api-gateway-url "..." \
+  --token-url "https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token" \
+  --client-id "digital_integration" \
+  --client-secret "your-client-secret" \
+  --api-gateway-url "https://admin-suite-stable-merlin.apis.medallia.com" \
   --languages "Spanish,French" \
-  --output-path "~/Downloads/"
+  --output-path "~/Downloads/" \
+  --include-html-blocks
 ```
+
+**Required Parameters:**
+- `--token-url`: MEC OAuth token endpoint
+- `--client-id`: OAuth client ID
+- `--client-secret`: OAuth client secret
+- `--api-gateway-url`: MEC API gateway base URL, it is called Public API Hostname 
+
+**Optional Parameters:**
+- `--profile`: Profile name (default: `default`)
+- `--languages`: Comma-separated language list (default: `English`)
+- `--output-path`: Download directory (default: `./`)
+- `--include-html-blocks`: Include HTML content in translations (default: `false`)
+
+#### Method 3: Direct File Editing
+
+Advanced users can manually edit the configuration file:
+
+**Location:** `${USER_HOME}/.mec/profiles`
+
+**Format:** INI file with secure permissions (owner read/write only)
+
+```ini
+[default]
+tokenUrl = https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token
+oAuthClientId = digital_integration
+oAuthClientSecret = your-client-secret
+apiGatewayUrl = https://admin-suite-stable-merlin.apis.medallia.com
+languages = English
+outputPath = ./
+includeHtmlBlocks = false
+
+[merlin-qa]
+tokenUrl = https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token
+oAuthClientId = digital_integration
+oAuthClientSecret = your-client-secret
+apiGatewayUrl = https://admin-suite-stable-merlin.apis.medallia.com
+languages = Spanish,French
+outputPath = ~/Downloads/
+includeHtmlBlocks = true
+```
+
+> **Security Note:** The configuration file is automatically created with secure file permissions (600 - owner read/write only) to protect sensitive credentials.
 
 ## Usage
 
