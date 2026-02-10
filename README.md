@@ -117,7 +117,7 @@ Pass all settings directly via command-line flags for non-interactive setup:
 # Configure default profile
 mec configure \
   --token-url "https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token" \
-  --client-id "digital_integration" \
+  --client-id "mec_cli_integration" \
   --client-secret "your-client-secret" \
   --api-gateway-url "https://admin-suite-stable-merlin.apis.medallia.com"
 
@@ -125,7 +125,7 @@ mec configure \
 mec configure \
   --profile "merlin-qa" \
   --token-url "https://admin-suite-stable.qa.den.medallia.com/oauth/merlin/token" \
-  --client-id "digital_integration" \
+  --client-id "mec_cli_integration" \
   --client-secret "your-client-secret" \
   --api-gateway-url "https://admin-suite-stable-merlin.apis.medallia.com" \
   --languages "Spanish,French" \
@@ -135,9 +135,9 @@ mec configure \
 
 **Required Parameters:**
 - `--token-url`: MEC OAuth token endpoint
-- `--client-id`: OAuth client ID
-- `--client-secret`: OAuth client secret
-- `--api-gateway-url`: MEC API gateway base URL, it is called Public API Hostname 
+- `--client-id`: MEC OAuth client ID
+- `--client-secret`: MEC OAuth client secret
+- `--api-gateway-url`: MEC API gateway base URL (Public API Hostname) 
 
 **Optional Parameters:**
 - `--profile`: Profile name (default: `default`)
