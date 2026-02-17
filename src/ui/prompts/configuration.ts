@@ -95,7 +95,7 @@ export class ConfigurationPrompt {
       {
         type: 'input',
         name: PROFILE_KEYS.LANGUAGES,
-        message: 'Default Languages:',
+        message: 'Default languages for translations (comma-separated):',
         default: getDefault('languages', PROFILE_DEFAULTS.LANGUAGES),
       },
       {
