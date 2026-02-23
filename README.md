@@ -106,7 +106,7 @@ After this, you can run `mec` from anywhere in your terminal.
 
 ## Configuration
 
-Configure authentication and connection settings using **profiles**. Profiles store your credentials and preferences for connecting to MEC environments.
+Configure authentication and connection settings using **profiles**. Each profile stores credentials and preferences for connecting to a specific MEC instance or environment. You can create multiple profiles to easily switch between different MEC instances and their respective environments (e.g., Instance A production, Instance A QA, Instance B production, Instance B sandbox).
 
 ### Before You Begin
 
@@ -156,10 +156,10 @@ mec configure \
 # Configure named profile with optional settings
 mec configure \
   --profile "caspian-qa" \
-  --token-url "https://caspian.medallia.com/oauth/caspian/token" \
+  --token-url "https://caspian.qa.medallia.com/oauth/caspian/token" \
   --client-id "mec_cli_integration" \
   --client-secret "your-client-secret" \
-  --api-gateway-url "https://caspian-caspian.apis.medallia.com" \
+  --api-gateway-url "https://caspian-caspian.apis.qa.medallia.com" \
   --languages "Spanish,French" \
   --output-path "~/Downloads/" \
   --include-html-blocks
@@ -179,7 +179,7 @@ mec configure \
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `--profile` | Profile name | `default` |
-| `--languages` | Comma-separated list of translation languages | `English` |
+| `--languages` | Comma-separated list of translation languages | `"English,Spanish,French"` |
 | `--output-path` | Download directory | `./` |
 | `--include-html-blocks` | Include HTML content in translations | `false` |
 
@@ -203,10 +203,10 @@ outputPath = ./
 includeHtmlBlocks = false
 
 [caspian-qa]
-tokenUrl = https://caspian.medallia.com/oauth/caspian/token
+tokenUrl = https://caspian.qa.medallia.com/oauth/caspian/token
 oAuthClientId = mec_cli_integration
 oAuthClientSecret = your-client-secret
-apiGatewayUrl = https://caspian-caspian.apis.medallia.com
+apiGatewayUrl = https://caspian-caspian.apis.qa.medallia.com
 languages = Spanish,French
 outputPath = ~/Downloads/
 includeHtmlBlocks = true
@@ -225,8 +225,8 @@ includeHtmlBlocks = true
 ```bash
 mec profiles list                             # List all profiles
 mec profiles list --detailed                  # Show detailed profile info
-mec profiles show --profile "caspian-sbx"      # Show specific profile
-mec profiles delete --profile "caspian-prod"   # Delete a profile
+mec profiles show --name "caspian-sbx"        # Show specific profile
+mec profiles delete --name "caspian-prod"     # Delete a profile
 ```
 
 ### Survey Operations
@@ -262,11 +262,11 @@ mec translations download \
 #### Upload
 
 ```bash
-# Upload translations
-mec translations upload --file "translations.xlsx"
-
 # Dry run (preview changes without uploading)
 mec translations upload --file "translations.xlsx" --pretend-upload
+
+# Upload translations
+mec translations upload --file "translations.xlsx"
 ```
 
 ---
@@ -281,7 +281,8 @@ These options can be used with most commands:
 | `--languages` | Comma-separated list of translation languages (e.g., `"Spanish,French"`) |
 | `--output-path` | Custom output directory for downloads |
 | `--include-html-blocks` | Include HTML content in translation files |
-| `--save-debug-files` | Save debug files for troubleshooting |
+| `--verbose`, `-v` | Enable verbose logging for detailed output |
+| `--save-debug-files`, `-d` | Save debug files for troubleshooting |
 | `--pretend-upload` | Dry run mode — preview changes without uploading |
 
 ---
@@ -298,9 +299,8 @@ mec translations download --help     # Subcommand help
 
 **Quick troubleshooting checklist:**
 - Have you run `mec configure` to set up a profile?
-- Are your OAuth credentials correct? Check with your MEC administrator.
-- Try `--save-debug-files` to capture diagnostic information.
-- Verify your active profile: `mec profiles show`
+- Are your OAuth credentials correct? Check with your MEC instance/administrator.
+- Try `--verbose` or `--save-debug-files` to capture diagnostic information.
 
 ---
 
