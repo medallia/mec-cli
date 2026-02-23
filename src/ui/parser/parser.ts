@@ -106,13 +106,13 @@ export function createYargsParser() {
               })
               .example(`$0 ${COMMANDS.CONFIGURE}`, 'Interactive setup')
               .example(`$0 ${COMMANDS.CONFIGURE} --quick`, 'Quick setup (required fields only)')
-              .example(`$0 ${COMMANDS.CONFIGURE} merlin-prod`, 'Configure specific profile')
+              .example(`$0 ${COMMANDS.CONFIGURE} caspian-prod`, 'Configure specific profile')
               .example(
-                `$0 ${COMMANDS.CONFIGURE} merlin-prod 
-                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.TOKEN_URL)} https://merlin.medallia.com/oauth/merlin/token 
-                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.OAUTH_CLIENT_ID)} medallia_merlin 
+                `$0 ${COMMANDS.CONFIGURE} caspian-prod 
+                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.TOKEN_URL)} https://caspian.medallia.com/oauth/caspian/token 
+                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.OAUTH_CLIENT_ID)} medallia_caspian 
                   ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.OAUTH_CLIENT_SECRET)} some-client-secret
-                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.API_GATEWAY_URL)} https://merlin-merlin.apis.medallia.com/`,
+                  ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILES.API_GATEWAY_URL)} https://caspian-caspian.apis.medallia.com/`,
                 'Non-interactive configuration for a specific profile'
               )
           );
@@ -179,8 +179,8 @@ export function createYargsParser() {
           })
           .example(`$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST}`, 'List all surveys')
           .example(
-            `$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILE)} merlin-prod`,
-            'List surveys using merlin-prod profile'
+            `$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILE)} caspian-prod`,
+            'List surveys using caspian-prod profile'
           )
           .example(
             `$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.NAME)} feedback`,
