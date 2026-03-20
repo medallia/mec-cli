@@ -41,8 +41,8 @@ export interface CliArgs {
   uuid?: string;
 
   // Translations command
-  'survey-uuid'?: string;
-  'survey-name'?: string;
+  'survey-uuid'?: string[];
+  'survey-name'?: string[];
   'save-debug-files'?: boolean;
   file?: string;
   'pretend-upload'?: boolean;

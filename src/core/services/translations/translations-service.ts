@@ -98,7 +98,13 @@ export class TranslationsService extends BaseService {
       .toISOString()
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
-    const surveyIdsPart = options.surveys.map(survey => survey.id).join('_');
+    const isMultiSurvey = options.surveys.length > 1;
+    const rawSurveyIdsPart = options.surveys.map(survey => survey.id).join('_');
+    // Truncate survey IDs part if it's too long to avoid file system 255 character limit issues (considering additional suffixes and extensions)
+    const truncatedSurveyIdsPart = rawSurveyIdsPart.length > 200
+      ? rawSurveyIdsPart.slice(0, 200)
+      : rawSurveyIdsPart;
+    const surveyIdsPart = isMultiSurvey ? `${truncatedSurveyIdsPart}-multi` : truncatedSurveyIdsPart;
     const simplifiedTranslationsFileName = `${surveyIdsPart}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
     const simplifiedTranslationsFilePath = PathUtils.join(
       options.outputPath,
@@ -264,7 +270,7 @@ export class TranslationsService extends BaseService {
       // Build final combined map with joined locations
       keyLocationMap.forEach((value, key) => {
         combinedWhereUsedMap.set(key, {
-          location: value.locations.join('\n'),
+          location: value.locations.join(',\n'),
           type: value.type || 'unknown'
         });
       });
@@ -374,8 +380,7 @@ export class TranslationsService extends BaseService {
 
         const whereUsedInfo = combinedWhereUsedMap.get(keyValue);
         const whereUsedValue = whereUsedInfo?.location || '';
-        const usedInMultiplePlaces = whereUsedValue.includes('\n');
-        const notesToTranslator = this.generateNotesToTranslator(originalTextValue, usedInMultiplePlaces);
+        const notesToTranslator = this.generateNotesToTranslator(originalTextValue);
 
         const outputRow = outputHeaders.map(idx => {
           if (idx === -1) {
@@ -405,32 +410,23 @@ export class TranslationsService extends BaseService {
   /**
    * Generate notes to translator based on text content
    */
-  private generateNotesToTranslator(text: string, usedInMultiplePlaces: boolean): string {
+  private generateNotesToTranslator(text: string): string {
     if (!text) {
       return '';
     }
 
     const hasHtmlBlocks = TranslationsService.containsHtmlBlocks(text);
     const hasVariables = TranslationsService.containsVariables(text);
-    const notes: string[] = [];
 
-    // Add content type notes
     if (hasHtmlBlocks && hasVariables) {
-      notes.push('Contains HTML/code and variables');
+      return 'Contains HTML/code and variables - please be mindful of the structure when performing the translation';
     } else if (hasHtmlBlocks) {
-      notes.push('Contains HTML/code');
+      return 'Contains HTML/code - please be mindful of the structure when performing the translation';
     } else if (hasVariables) {
-      notes.push('Contains variable text');
+      return 'Contains variable text - please be mindful of the structure when performing the translation';
     }
 
-    // TODO: Add usage note - Remove due to API limitations and not able to idenfity usage for all kes/texts in all surveys.
-    if (usedInMultiplePlaces) {
-      notes.push('Used in multiple surveys');
-    }
-
-    return notes.length > 0
-      ? `${notes.join(' and ')} - please be mindful of the structure when performing the translation.`
-      : '';
+    return '';
   }
 
   /**
