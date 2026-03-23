@@ -78,10 +78,13 @@ export class TranslationsCommand implements ICommand {
           surveyItemList.push(surveys[0]);
         }
 
+        // Deduplicate by survey id (same survey may be provided via UUID and name, or UUID listed twice)
+        const uniqueSurveyItemList = [...new Map(surveyItemList.map(s => [s.id, s])).values()];
+
         log.info(`${EMOJIS.DOWNLOAD}  Starting translation download...`);
         ui.formatters.progress.startSpinner('Downloading translations file...');
         const downloadOptions: DownloadTranslationsOptions = {
-          surveys: surveyItemList,
+          surveys: uniqueSurveyItemList,
           // Override priority: CLI options (only when provided) > Profile config > Defaults
           languages:
             options[CLI_OPTIONS.TRANSLATIONS.LANGUAGES] ??

@@ -50,7 +50,7 @@ export class TranslationsService extends BaseService {
         log.error(
           `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${survey.name} (${survey.id})`
         );
-        return Promise.reject(new ValidationError(`No survey version found for: ${survey.name} (${survey.id})`));
+        throw new ValidationError(`No survey version found for: ${survey.name} (${survey.id})`);
       }
     }
 

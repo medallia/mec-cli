@@ -94,13 +94,13 @@ export class SurveysService extends BaseService {
   async getSurveyByName(surveyName: string): Promise<SurveyItem[]> {
     log.info(`${EMOJIS.LOADING} Getting surveys by name: "${surveyName}"...`);
 
-    const allSurveys = await this.getAllSurveys({ q: surveyName });
+    const matchingSurveys = await this.getAllSurveys({ q: surveyName });
 
-    if (allSurveys.length === 0) {
+    if (matchingSurveys.length === 0) {
       throw new ValidationError(`No survey program found with name: "${surveyName}"`);
     }
 
-    return allSurveys;
+    return matchingSurveys;
   }
 
   /**

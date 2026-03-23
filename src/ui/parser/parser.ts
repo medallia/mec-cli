@@ -217,12 +217,14 @@ export function createYargsParser() {
             })
             // Download-specific options
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID, {
-              type: 'array',
+              type: 'string',
+              array: true,
               description: 'UUID(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME, {
-              type: 'array',
+              type: 'string',
+              array: true,
               description: 'Name(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
@@ -297,7 +299,7 @@ export function createYargsParser() {
               'Download translations by UUID'
             )
             .example(
-              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} f0473723-45f0-4397-b39e-d2bf3d955a20 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} g0473723-45f0-4397-b39e-d2bf3d955a21 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} h0473723-45f0-4397-b39e-d2bf3d955a22`,
+              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} f0473723-45f0-4397-b39e-d2bf3d955a20 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} 1fa05e9d-2f31-4ee0-8a72-17a2840d1e32 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} b3384f6a-22a1-4ff3-b1ca-a15d344e7557`,
               'Download translations for multiple surveys by UUID'
             )
             .example(

@@ -7,6 +7,7 @@
 
 import { CLIApplication } from '../src/app/cli';
 import { CoreContainer } from '../src/core';
+import { createYargsParser } from '../src/ui/parser/parser';
 
 interface TestResult {
   name: string;
@@ -76,6 +77,68 @@ class ParseTester {
       process.argv = ['node', 'mec', 'translations', 'download', '--profile', 'default'];
       
       // Translations command parsing structure is valid
+    });
+
+    await this.runTest('Translations download: multiple --survey-uuid values parsed as array', async () => {
+      process.argv = [
+        'node', 'mec', 'translations', 'download',
+        '--survey-uuid', 'uuid-one',
+        '--survey-uuid', 'uuid-two',
+      ];
+      const argv = createYargsParser().parseSync();
+      const uuids = argv['survey-uuid'] as string[];
+      if (!Array.isArray(uuids)) {
+        throw new Error(`Expected survey-uuid to be an array, got ${typeof uuids}`);
+      }
+      if (uuids.length !== 2 || uuids[0] !== 'uuid-one' || uuids[1] !== 'uuid-two') {
+        throw new Error(`Expected ['uuid-one', 'uuid-two'], got ${JSON.stringify(uuids)}`);
+      }
+    });
+
+    await this.runTest('Translations download: multiple --survey-name values parsed as array', async () => {
+      process.argv = [
+        'node', 'mec', 'translations', 'download',
+        '--survey-name', 'Survey A',
+        '--survey-name', 'Survey B',
+      ];
+      const argv = createYargsParser().parseSync();
+      const names = argv['survey-name'] as string[];
+      if (!Array.isArray(names)) {
+        throw new Error(`Expected survey-name to be an array, got ${typeof names}`);
+      }
+      if (names.length !== 2 || names[0] !== 'Survey A' || names[1] !== 'Survey B') {
+        throw new Error(`Expected ['Survey A', 'Survey B'], got ${JSON.stringify(names)}`);
+      }
+    });
+
+    await this.runTest('Translations download: --survey-uuid and --survey-name accepted together by parser', async () => {
+      process.argv = [
+        'node', 'mec', 'translations', 'download',
+        '--survey-uuid', 'some-uuid',
+        '--survey-name', 'Some Survey',
+      ];
+      const argv = createYargsParser().parseSync();
+      const uuids = argv['survey-uuid'] as string[];
+      const names = argv['survey-name'] as string[];
+      if (!Array.isArray(uuids) || uuids[0] !== 'some-uuid') {
+        throw new Error(`Expected survey-uuid=['some-uuid'], got ${JSON.stringify(uuids)}`);
+      }
+      if (!Array.isArray(names) || names[0] !== 'Some Survey') {
+        throw new Error(`Expected survey-name=['Some Survey'], got ${JSON.stringify(names)}`);
+      }
+    });
+
+    await this.runTest('Translations download: duplicate --survey-uuid kept by parser (dedup happens in command)', async () => {
+      process.argv = [
+        'node', 'mec', 'translations', 'download',
+        '--survey-uuid', 'same-uuid',
+        '--survey-uuid', 'same-uuid',
+      ];
+      const argv = createYargsParser().parseSync();
+      const uuids = argv['survey-uuid'] as string[];
+      if (!Array.isArray(uuids) || uuids.length !== 2) {
+        throw new Error(`Parser should preserve duplicates (dedup is in command layer); got ${JSON.stringify(uuids)}`);
+      }
     });
   }
 
