@@ -177,6 +177,15 @@ export function createYargsParser() {
             type: 'string',
             description: 'Filter survey programs by UUID',
           })
+          .check(argv => {
+            if (argv[CLI_OPTIONS.SURVEYS.NAME] !== undefined && !String(argv[CLI_OPTIONS.SURVEYS.NAME]).trim()) {
+              throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.NAME)} value must not be empty`);
+            }
+            if (argv[CLI_OPTIONS.SURVEYS.UUID] !== undefined && !String(argv[CLI_OPTIONS.SURVEYS.UUID]).trim()) {
+              throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.UUID)} value must not be empty`);
+            }
+            return true;
+          })
           .example(`$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST}`, 'List all surveys')
           .example(
             `$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILE)} caspian-prod`,
@@ -209,12 +218,12 @@ export function createYargsParser() {
             // Download-specific options
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID, {
               type: 'array',
-              description: 'UUID(s) of the survey program(s) (download only). Can specify multiple values.',
+              description: 'UUID(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME, {
               type: 'array',
-              description: 'Name(s) of the survey program(s) (download only). Can specify multiple values.',
+              description: 'Name(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.LANGUAGES, {
@@ -261,6 +270,16 @@ export function createYargsParser() {
                     `For download: either ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} or ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} must be provided`
                   );
                 }
+              }
+
+              // Guard against blank values like --survey-uuid ""
+              const uuids = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
+              if (uuids?.some(v => !String(v).trim())) {
+                throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`);
+              }
+              const names = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
+              if (names?.some(v => !String(v).trim())) {
+                throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`);
               }
 
               if (action === SUB_COMMANDS.TRANSLATIONS.UPLOAD) {

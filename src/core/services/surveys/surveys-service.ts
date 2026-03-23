@@ -85,10 +85,6 @@ export class SurveysService extends BaseService {
 
     log.info(`${EMOJIS.SUCCESS} Retrieved all ${allSurveys.length} surveys`);
 
-    if (allSurveys.length === 0) {
-      throw new ValidationError(`No survey program found with name: "${options?.q}"`);
-    }
-
     return allSurveys;
   }
 
@@ -98,7 +94,13 @@ export class SurveysService extends BaseService {
   async getSurveyByName(surveyName: string): Promise<SurveyItem[]> {
     log.info(`${EMOJIS.LOADING} Getting surveys by name: "${surveyName}"...`);
 
-    return this.getAllSurveys({ q: surveyName });
+    const allSurveys = await this.getAllSurveys({ q: surveyName });
+
+    if (allSurveys.length === 0) {
+      throw new ValidationError(`No survey program found with name: "${surveyName}"`);
+    }
+
+    return allSurveys;
   }
 
   /**
