@@ -157,13 +157,12 @@ export class TranslationsService extends BaseService {
       this.cleanupTempFile(rawTranslationsFilePath, isDebugEnabled);
 
       log.info(
-        `${EMOJIS.SUCCESS} Downloaded ${simplifiedTranslationsFilePath.split('/').pop()} translations for survey(s): ${options.surveys.map(s => s.name).join(', ')}`
+        `${EMOJIS.SUCCESS} Downloaded ${PathUtils.basename(simplifiedTranslationsFilePath)} translations for survey(s): ${options.surveys.map(s => s.name).join(', ')}`
       );
 
       return {
         processedFilePath: simplifiedTranslationsFilePath,
         rawTranslationsFilePath: isDebugEnabled ? rawTranslationsFilePath : '',
-        surveySpecFilePath: '',
         missingLanguages,
       };
     } catch (error) {
@@ -579,7 +578,7 @@ export class TranslationsService extends BaseService {
 
       // Generate output file path
       const originalFileName = FileValidator.sanitizeFilename(
-        filePath.split('/').pop() || 'translations.xlsx'
+        PathUtils.basename(filePath) || 'translations.xlsx'
       );
       const originalFileNameWithoutExtension =
         PathUtils.getFileNameWithoutExtension(originalFileName);
@@ -609,7 +608,7 @@ export class TranslationsService extends BaseService {
 
     const formData = new FormData();
     const fileName = FileValidator.sanitizeFilename(
-      filePath.split('/').pop() || 'translations.xlsx'
+      PathUtils.basename(filePath) || 'translations.xlsx'
     );
     formData.append('file', this.fsAdapter.createReadStream(filePath), fileName);
 
