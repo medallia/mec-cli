@@ -1,4 +1,7 @@
+import axios from 'axios';
+
 import { log } from '../../../utils';
+import { ValidationError } from '../../../utils/errors';
 import { HttpClient } from '../../adapters/http';
 import { API_DEFAULTS, EMOJIS } from '../../config';
 import { Profile } from '../../config/types';
@@ -99,13 +102,20 @@ export class SurveysService extends BaseService {
   async getSurveyByUuid(surveyUuid: string): Promise<SurveyItem> {
     log.info(`${EMOJIS.LOADING} Fetching survey by UUID: ${surveyUuid}...`);
 
-    const response = await this.httpClient.request<SurveyItem>({
-      method: 'GET',
-      url: SURVEYS_ENDPOINTS.SURVEY_BY_ID(surveyUuid),
-    });
+    try {
+      const response = await this.httpClient.request<SurveyItem>({
+        method: 'GET',
+        url: SURVEYS_ENDPOINTS.SURVEY_BY_ID(surveyUuid),
+      });
 
-    log.info(`${EMOJIS.SUCCESS} Retrieved survey "${response.name}" for UUID "${surveyUuid}"`);
-    return response;
+      log.info(`${EMOJIS.SUCCESS} Retrieved survey "${response.name}" for UUID "${surveyUuid}"`);
+      return response;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new ValidationError(`No survey found with UUID: "${surveyUuid}"`);
+      }
+      throw error;
+    }
   }
 
   /**

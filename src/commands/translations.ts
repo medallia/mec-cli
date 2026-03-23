@@ -59,11 +59,8 @@ export class TranslationsCommand implements ICommand {
 
         const surveyItemList: SurveyItem[] = [];
 
-        for (let i = 0; i < surveyUuidResults.length; i++) {
-          if (!surveyUuidResults[i]) {
-            throw new ValidationError(`Survey not found for UUID: "${surveyUuids![i]}"`);
-          }
-          surveyItemList.push(surveyUuidResults[i]!);
+        for (const survey of surveyUuidResults) {
+          surveyItemList.push(survey);
         }
 
         for (let i = 0; i < surveyNameResults.length; i++) {
@@ -76,7 +73,7 @@ export class TranslationsCommand implements ICommand {
             );
           }
           if (surveys.length === 0) {
-            throw new ValidationError(`Survey not found for name: "${surveyName}"`);
+            throw new ValidationError(`No survey found with name: "${surveyName}"`);
           }
           surveyItemList.push(surveys[0]);
         }
