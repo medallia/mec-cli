@@ -73,11 +73,6 @@ export class UI {
     surveys: SurveyItem[],
     getAdminSurveyEditorUrlById: (_id: string) => string
   ): void {
-    if (surveys.length === 0) {
-      console.log(this.output.formatWarning('No survey programs found'));
-      return;
-    }
-
     console.log(Colors.info(`\n${EMOJIS.SURVEY} Survey Program(s):`));
     this.table.displaySurveysTable(surveys, getAdminSurveyEditorUrlById);
   }

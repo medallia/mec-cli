@@ -250,7 +250,7 @@ export class TranslationsService extends BaseService {
       // Build "Where Used" mapping using pre-fetched data with survey names
       // Combine all whereUsed maps into a single map
       const combinedWhereUsedMap = new Map<string, WhereUsedInfo>();
-      const keyLocationMap = new Map<string, { locations: string[], type?: string }>();
+      const keyLocationMap = new Map<string, { locations: Set<string>, type?: string }>();
 
       surveyFlatViewResponses.forEach((surveyFlatViewResponse, index) => {
         const surveyName = options.surveys[index].name;
@@ -258,11 +258,13 @@ export class TranslationsService extends BaseService {
         
         // Process each key from the pre-built map
         whereUsedMap.forEach((result, key) => {
+          if (!keyLocationMap.has(key)) {
+            keyLocationMap.set(key, { locations: new Set<string>(), type: result.type });
+          }
+          // Only include non-unknown locations in the display text, but always
+          // preserve the entry and its type so HTML-block filtering works correctly
           if (!result.location.includes('Unknown')) {
-            if (!keyLocationMap.has(key)) {
-              keyLocationMap.set(key, { locations: [], type: result.type });
-            }
-            keyLocationMap.get(key)!.locations.push(result.location);
+            keyLocationMap.get(key)!.locations.add(result.location);
           }
         });
       });
@@ -270,7 +272,7 @@ export class TranslationsService extends BaseService {
       // Build final combined map with joined locations
       keyLocationMap.forEach((value, key) => {
         combinedWhereUsedMap.set(key, {
-          location: value.locations.join(',\n'),
+          location: [...value.locations].join(',\n'),
           type: value.type || 'unknown'
         });
       });
@@ -330,7 +332,7 @@ export class TranslationsService extends BaseService {
       outputHeaders.splice(1, 0, -1, -2); // Add Where Used and Notes to Translator after Key
       const headerRowWithExtraColumns = outputHeaders.map(idx => {
         if (idx === -1) {
-          return 'Where Used';
+          return 'Where Used (applies to selected surveys only)';
         }
         if (idx === -2) {
           return 'Notes to Translator';

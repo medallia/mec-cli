@@ -84,6 +84,11 @@ export class SurveysService extends BaseService {
     }
 
     log.info(`${EMOJIS.SUCCESS} Retrieved all ${allSurveys.length} surveys`);
+
+    if (allSurveys.length === 0) {
+      throw new ValidationError(`No survey program found with name: "${options?.q}"`);
+    }
+
     return allSurveys;
   }
 
@@ -112,7 +117,7 @@ export class SurveysService extends BaseService {
       return response;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new ValidationError(`No survey found with UUID: "${surveyUuid}"`);
+        throw new ValidationError(`No survey program found with UUID: "${surveyUuid}"`);
       }
       throw error;
     }
@@ -136,12 +141,30 @@ export class SurveysService extends BaseService {
   buildWhereUsedMap(surveyName: string, surveyFlatViewResponse: SurveyFlatViewResponse): Map<string, WhereUsedInfo> {
     const whereUsedMap = new Map<string, WhereUsedInfo>();
 
-    // Create lookup maps for better performance
+    // O(1) lookup maps — built once, used by all resolve functions
     const surveyModelMap = new Map<string, SurveyModelItem>();
+    const surveyModelByFieldId = new Map<string, SurveyModelItem>();
+    const surveyModelByTranslationKey = new Map<string, SurveyModelItem>();
     surveyFlatViewResponse.survey_model.forEach(item => {
-      if (item.id) {
-        surveyModelMap.set(item.id, item);
-      }
+      if (item.id) surveyModelMap.set(item.id, item);
+      if (item.field?.id) surveyModelByFieldId.set(item.field.id, item);
+      item.translation_keys?.forEach(tk => {
+        if (tk['translation-key']) surveyModelByTranslationKey.set(tk['translation-key'], item);
+      });
+    });
+
+    const questionFieldByTranslationKey = new Map<string, QuestionField>();
+    const questionFieldByAltSetId = new Map<string, QuestionField>();
+    surveyFlatViewResponse.question_fields.forEach(qf => {
+      if (qf.translation_key) questionFieldByTranslationKey.set(qf.translation_key, qf);
+      if (qf.alternative_set?.id) questionFieldByAltSetId.set(qf.alternative_set.id, qf);
+    });
+
+    const alternativeByTranslationKey = new Map<string, { alt: AlternativeItem; altSet: AlternativeSet }>();
+    surveyFlatViewResponse.alternative_sets.forEach(altSet => {
+      altSet.alternatives?.forEach(alt => {
+        if (alt.translation_key) alternativeByTranslationKey.set(alt.translation_key, { alt, altSet });
+      });
     });
 
     const resolve = (key: string): WhereUsedInfo => {
@@ -159,18 +182,12 @@ export class SurveysService extends BaseService {
 
     // 1. :question: resolution
     const resolveQuestionKey = (key: string): WhereUsedInfo => {
-      // Find translation_key in question_fields[]
-      const questionField = surveyFlatViewResponse.question_fields.find(
-        (qf: QuestionField) => qf.translation_key === key
-      );
+      const questionField = questionFieldByTranslationKey.get(key);
       if (!questionField?.key) {
         return { location: 'Unknown Question Location', type: 'question' };
       }
 
-      // Get field key and match against survey_model[].field.id
-      const surveyModelElement = surveyFlatViewResponse.survey_model.find(
-        (sm: SurveyModelItem) => sm.field?.id === questionField.key
-      );
+      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
       if (!surveyModelElement) {
         return { location: 'Unknown Question Location', type: 'question' };
       }
@@ -189,40 +206,20 @@ export class SurveysService extends BaseService {
 
     // 2. :alternative: resolution
     const resolveAlternativeKey = (key: string): WhereUsedInfo => {
-      // Match the key with alternative_sets[].alternatives[].translation_key
-      let foundAlternative: AlternativeItem | null = null;
-      let foundAlternativeSet: AlternativeSet | null = null;
-
-      for (const altSet of surveyFlatViewResponse.alternative_sets) {
-        if (altSet.alternatives) {
-          const alt = altSet.alternatives.find((a: AlternativeItem) => a.translation_key === key);
-          if (alt) {
-            foundAlternative = alt;
-            foundAlternativeSet = altSet;
-            break;
-          }
-        }
-      }
-
-      if (!foundAlternative || !foundAlternativeSet) {
+      const altEntry = alternativeByTranslationKey.get(key);
+      if (!altEntry) {
         return { location: 'Unknown Answer Location', type: 'alternative' };
       }
 
-      // Get sequence_number → Answer numbering (sequence_number+1)
+      const { alt: foundAlternative, altSet: foundAlternativeSet } = altEntry;
       const answerNumber = (foundAlternative.sequence_number ?? 0) + 1;
 
-      // Get the alternative id, match to question_fields[].alternative_set.id
-      const questionField = surveyFlatViewResponse.question_fields.find(
-        (qf: QuestionField) => qf.alternative_set?.id === foundAlternativeSet.id
-      );
+      const questionField = questionFieldByAltSetId.get(foundAlternativeSet.id);
       if (!questionField?.key) {
         return { location: `Answer ${String(answerNumber).padStart(2, '0')}`, type: 'alternative' };
       }
 
-      // Match to survey_model[].field.id for Question numbering
-      const surveyModelElement = surveyFlatViewResponse.survey_model.find(
-        (sm: SurveyModelItem) => sm.field?.id === questionField.key
-      );
+      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
       if (!surveyModelElement) {
         return { location: `Answer ${String(answerNumber).padStart(2, '0')}`, type: 'alternative' };
       }
@@ -240,19 +237,7 @@ export class SurveysService extends BaseService {
 
     // 3. :survey_program: resolution
     const resolveSurveyProgramKey = (key: string): WhereUsedInfo => {
-      // Match key with survey_model[].translation_keys[].translation-key
-      let foundElement: SurveyModelItem | null = null;
-
-      for (const element of surveyFlatViewResponse.survey_model) {
-        if (element.translation_keys) {
-          const matchingKey = element.translation_keys.find(tk => tk['translation-key'] === key);
-          if (matchingKey) {
-            foundElement = element;
-            break;
-          }
-        }
-      }
-
+      const foundElement = surveyModelByTranslationKey.get(key);
       if (!foundElement) {
         return { location: 'Unknown Survey Program Location', type: 'unknown' };
       }

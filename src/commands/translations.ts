@@ -73,7 +73,7 @@ export class TranslationsCommand implements ICommand {
             );
           }
           if (surveys.length === 0) {
-            throw new ValidationError(`No survey found with name: "${surveyName}"`);
+            throw new ValidationError(`No survey program found with name: "${surveyName}"`);
           }
           surveyItemList.push(surveys[0]);
         }
