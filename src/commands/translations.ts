@@ -41,12 +41,6 @@ export class TranslationsCommand implements ICommand {
         const surveyUuids = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
         const surveyNames = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
 
-        if (!surveyUuids && !surveyNames) {
-          throw new ValidationError(
-            `Either ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} or ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} must be provided`
-          );
-        }
-
         // Collect all surveys to process — fetch UUIDs and names in parallel
         const [surveyUuidResults, surveyNameResults] = await Promise.all([
           surveyUuids && surveyUuids.length > 0
