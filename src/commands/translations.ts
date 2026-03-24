@@ -41,13 +41,17 @@ export class TranslationsCommand implements ICommand {
         const surveyUuids = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
         const surveyNames = options[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
 
+        // Deduplicate inputs so identical UUIDs/names don't trigger redundant API calls
+        const uniqueSurveyUuids = surveyUuids ? [...new Set(surveyUuids)] : [];
+        const uniqueSurveyNames = surveyNames ? [...new Set(surveyNames)] : [];
+
         // Collect all surveys to process — fetch UUIDs and names in parallel
         const [surveyUuidResults, surveyNameResults] = await Promise.all([
-          surveyUuids && surveyUuids.length > 0
-            ? Promise.all(surveyUuids.map(uuid => surveyService.getSurveyByUuid(uuid as string)))
+          uniqueSurveyUuids.length > 0
+            ? Promise.all(uniqueSurveyUuids.map(uuid => surveyService.getSurveyByUuid(uuid as string)))
             : Promise.resolve([]),
-          surveyNames && surveyNames.length > 0
-            ? Promise.all(surveyNames.map(name => surveyService.getSurveyByName(name as string)))
+          uniqueSurveyNames.length > 0
+            ? Promise.all(uniqueSurveyNames.map(name => surveyService.getSurveyByName(name as string)))
             : Promise.resolve([]),
         ]);
 
@@ -59,16 +63,14 @@ export class TranslationsCommand implements ICommand {
 
         for (let i = 0; i < surveyNameResults.length; i++) {
           const surveys = surveyNameResults[i];
-          const surveyName = surveyNames![i];
+          const surveyName = uniqueSurveyNames[i];
           if (surveys.length > 1) {
             ui.displaySurveys(surveys, getAdminSurveyEditorUrlById);
             throw new ValidationError(
               `More than one survey program found with name: "${surveyName}", please specify a more unique name or use ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)}`
             );
           }
-          if (surveys.length === 0) {
-            throw new ValidationError(`No survey program found with name: "${surveyName}"`);
-          }
+
           surveyItemList.push(surveys[0]);
         }
 

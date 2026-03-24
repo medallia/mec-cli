@@ -259,6 +259,10 @@ export class TranslationsService extends BaseService {
         whereUsedMap.forEach((result, key) => {
           if (!keyLocationMap.has(key)) {
             keyLocationMap.set(key, { locations: new Set<string>(), type: result.type });
+          } else if (result.type === 'html') {
+            // If any survey reports this key as html, treat the merged entry as html
+            // so the includeHtmlBlocks filter is applied correctly across all surveys
+            keyLocationMap.get(key)!.type = 'html';
           }
           // Only include non-unknown locations in the display text, but always
           // preserve the entry and its type so HTML-block filtering works correctly

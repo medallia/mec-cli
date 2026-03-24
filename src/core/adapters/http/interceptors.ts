@@ -8,6 +8,7 @@ import axios, {
 import { log } from '../../../utils';
 import { EMOJIS } from '../../config/constants';
 import { Profile } from '../../config/types';
+import { AuthenticationError } from '../../../utils/errors';
 
 // Profile management for authentication
 const profileStore: Map<string, Profile> = new Map();
@@ -91,7 +92,7 @@ export class RequestInterceptor {
         `${EMOJIS.ERROR} Authentication failed`,
         message
       );
-      throw new Error(`Authentication failed: ${message}`);
+      throw new AuthenticationError(`Authentication failed: ${message}`);
     }
   }
 
