@@ -272,16 +272,17 @@ export function createYargsParser() {
                     `For download: either ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} or ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} must be provided`
                   );
                 }
-              }
 
-              // Guard against blank values like --survey-uuid ""
-              const uuids = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
-              if (uuids?.some(v => !String(v).trim())) {
-                throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`);
-              }
-              const names = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
-              if (names?.some(v => !String(v).trim())) {
-                throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`);
+                // Guard against blank values like --survey-uuid ""
+                const uuids = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
+                if (uuids?.some(v => !String(v).trim())) {
+                  throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`);
+                }
+
+                const names = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
+                if (names?.some(v => !String(v).trim())) {
+                  throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`);
+                }
               }
 
               if (action === SUB_COMMANDS.TRANSLATIONS.UPLOAD) {

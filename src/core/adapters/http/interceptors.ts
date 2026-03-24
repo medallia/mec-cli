@@ -86,7 +86,6 @@ export class RequestInterceptor {
       log.info(`${EMOJIS.SUCCESS} Authentication successful`);
       return access_token;
     } catch (error) {
-      console.log(error);
       const message = error instanceof Error ? error.message : 'Unknown';
       log.error(
         `${EMOJIS.ERROR} Authentication failed`,
