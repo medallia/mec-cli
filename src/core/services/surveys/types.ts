@@ -116,12 +116,6 @@ export interface WhereUsedInfo {
   type: string;
 }
 
-export interface WhereUsedMap {
-  get(key: string): WhereUsedInfo;
-  has(key: string): boolean;
-  forEach(fn: (value: WhereUsedInfo, key: string) => void): void;
-}
-
 export interface WhereUsedAccumulator {
   locations: Set<string>;
   type: string;
