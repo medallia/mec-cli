@@ -329,12 +329,12 @@ export class SurveysService extends BaseService {
 
       const questionField = questionFieldByAltSetId.get(foundAlternativeSet.id);
       if (!questionField?.key) {
-        return { location: answerLabel, type: 'alternative' };
+        return { location: buildLocation(surveyName, answerLabel), type: 'alternative' };
       }
 
       const surveyModelElement = surveyModelByFieldId.get(questionField.key);
       if (!surveyModelElement) {
-        return { location: answerLabel, type: 'alternative' };
+        return { location: buildLocation(surveyName, answerLabel), type: 'alternative' };
       }
 
       const questionNumber = (surveyModelElement.position ?? 0) + 1;
