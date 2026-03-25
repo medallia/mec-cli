@@ -89,18 +89,18 @@ export class SurveysService extends BaseService {
   }
 
   /**
-   * Get surveys by name (returns list of matching surveys)
+   * Get surveys by name
    */
   async getSurveyByName(surveyName: string): Promise<SurveyItem[]> {
     log.info(`${EMOJIS.LOADING} Getting surveys by name: "${surveyName}"...`);
 
-    const matchingSurveys = await this.getAllSurveys({ q: surveyName });
+    const response = await this.getAllSurveys({ q: surveyName });
 
-    if (matchingSurveys.length === 0) {
+    if (response.length === 0) {
       throw new ValidationError(`No survey program found with name: "${surveyName}"`);
     }
 
-    return matchingSurveys;
+    return response;
   }
 
   /**
@@ -109,20 +109,33 @@ export class SurveysService extends BaseService {
   async getSurveyByUuid(surveyUuid: string): Promise<SurveyItem> {
     log.info(`${EMOJIS.LOADING} Fetching survey by UUID: ${surveyUuid}...`);
 
+    const notFoundErrorMessage = `No survey program found with UUID: "${surveyUuid}"`;
+
+    let response: SurveyItem;
     try {
-      const response = await this.httpClient.request<SurveyItem>({
+      response = await this.httpClient.request<SurveyItem>({
         method: 'GET',
         url: SURVEYS_ENDPOINTS.SURVEY_BY_ID(surveyUuid),
       });
-
-      log.info(`${EMOJIS.SUCCESS} Retrieved survey "${response.name}" for UUID "${surveyUuid}"`);
-      return response;
     } catch (error) {
+      log.error(
+        `Error fetching survey by UUID: ${surveyUuid}`,
+        error instanceof Error ? error.message : error
+      );
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new ValidationError(`No survey program found with UUID: "${surveyUuid}"`);
+        throw new ValidationError(notFoundErrorMessage);
       }
       throw error;
     }
+
+    // Some UUIDs (e.g., ".", "#") cause the URL to be altered and the API returns 200 with an empty
+    // response instead of 404, so check for a valid name to detect when the survey is not found.
+    if (response.name == null) {
+      log.error(`Survey with UUID "${surveyUuid}" not found (empty response)`);
+      throw new ValidationError(notFoundErrorMessage);
+    }
+    log.info(`${EMOJIS.SUCCESS} Retrieved survey "${response.name}" for UUID "${surveyUuid}"`);
+    return response;
   }
 
   /**
@@ -131,16 +144,30 @@ export class SurveysService extends BaseService {
   async getSurveyFlatView(surveyUuid: string): Promise<SurveyFlatViewResponse> {
     log.info(`${EMOJIS.LOADING} Fetching flat view for survey UUID: ${surveyUuid}...`);
 
-    const response = await this.httpClient.request<SurveyFlatViewResponse>({
-      method: 'GET',
-      url: SURVEYS_ENDPOINTS.FLAT_VIEW(surveyUuid),
-    });
+    try {
+      const response = await this.httpClient.request<SurveyFlatViewResponse>({
+        method: 'GET',
+        url: SURVEYS_ENDPOINTS.FLAT_VIEW(surveyUuid),
+      });
 
-    log.info(`${EMOJIS.SUCCESS} Retrieved flat view for survey UUID: ${surveyUuid}`);
-    return response;
+      log.info(`${EMOJIS.SUCCESS} Retrieved flat view for survey UUID: ${surveyUuid}`);
+      return response;
+    } catch (error) {
+      log.error(
+        `Error fetching flat view for survey UUID: ${surveyUuid}`,
+        error instanceof Error ? error.message : error
+      );
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new ValidationError(`No survey spec found for survey UUID: "${surveyUuid}"`);
+      }
+      throw error;
+    }
   }
 
-  buildWhereUsedMap(surveyName: string, surveyFlatViewResponse: SurveyFlatViewResponse): Map<string, WhereUsedInfo> {
+  buildWhereUsedMap(
+    surveyName: string,
+    surveyFlatViewResponse: SurveyFlatViewResponse
+  ): Map<string, WhereUsedInfo> {
     const whereUsedMap = new Map<string, WhereUsedInfo>();
 
     // O(1) lookup maps — built once, used by all resolve functions
@@ -148,116 +175,108 @@ export class SurveysService extends BaseService {
     const surveyModelByFieldId = new Map<string, SurveyModelItem>();
     const surveyModelByTranslationKey = new Map<string, SurveyModelItem>();
     surveyFlatViewResponse.survey_model.forEach(item => {
-      if (item.id) surveyModelMap.set(item.id, item);
-      if (item.field?.id) surveyModelByFieldId.set(item.field.id, item);
+      if (item.id) {
+        surveyModelMap.set(item.id, item);
+      }
+      if (item.field?.id) {
+        surveyModelByFieldId.set(item.field.id, item);
+      }
       item.translation_keys?.forEach(tk => {
-        if (tk['translation-key']) surveyModelByTranslationKey.set(tk['translation-key'], item);
+        if (tk['translation-key']) {
+          surveyModelByTranslationKey.set(tk['translation-key'], item);
+        }
       });
     });
 
     const questionFieldByTranslationKey = new Map<string, QuestionField>();
     const questionFieldByAltSetId = new Map<string, QuestionField>();
     surveyFlatViewResponse.question_fields.forEach(qf => {
-      if (qf.translation_key) questionFieldByTranslationKey.set(qf.translation_key, qf);
-      if (qf.alternative_set?.id) questionFieldByAltSetId.set(qf.alternative_set.id, qf);
+      if (qf.translation_key) {
+        questionFieldByTranslationKey.set(qf.translation_key, qf);
+      }
+      if (qf.alternative_set?.id) {
+        questionFieldByAltSetId.set(qf.alternative_set.id, qf);
+      }
     });
 
-    const alternativeByTranslationKey = new Map<string, { alt: AlternativeItem; altSet: AlternativeSet }>();
+    const alternativeByTranslationKey = new Map<
+      string,
+      { alt: AlternativeItem; altSet: AlternativeSet }
+    >();
     surveyFlatViewResponse.alternative_sets.forEach(altSet => {
       altSet.alternatives?.forEach(alt => {
-        if (alt.translation_key) alternativeByTranslationKey.set(alt.translation_key, { alt, altSet });
+        if (alt.translation_key) {
+          alternativeByTranslationKey.set(alt.translation_key, { alt, altSet });
+        }
       });
     });
 
-    const resolve = (key: string): WhereUsedInfo => {
-      if (key.startsWith(':question:')) {
-        return resolveQuestionKey(key);
+    // Joins location path segments, skipping empty ones (e.g. when containerPath is '').
+    const buildLocation = (...parts: string[]): string => parts.filter(Boolean).join(' > ');
+
+    // Builds a display name for a single node in the container chain.
+    // Returns { name, isRootPage } — isRootPage=true signals the walk should stop.
+    const buildPathElement = (item: SurveyModelItem): { name: string; isRootPage: boolean } => {
+      const position = (item.position ?? 0) + 1;
+
+      // Root-level page: type "section" whose own container is the virtual "model" root
+      if (item.type?.toLowerCase() === 'section' && item.container?.id?.toLowerCase() === 'model') {
+        let pageName = `Page ${String(position).padStart(2, '0')}`;
+        if (
+          item.name?.trim() &&
+          item.name.toLowerCase() !== 'page' &&
+          item.name.toLowerCase() !== 'new page'
+        ) {
+          pageName = `${pageName} - ${item.name}`;
+        }
+        return { name: pageName, isRootPage: true };
       }
-      if (key.startsWith(':alternative:')) {
-        return resolveAlternativeKey(key);
+
+      switch (item.type?.toLowerCase()) {
+        case 'section':
+          return {
+            name: item.name || `Section ${String(position).padStart(2, '0')}`,
+            isRootPage: false,
+          };
+        case 'end-section': {
+          let name = `Page ${String(position).padStart(2, '0')}`;
+          if (item.name?.trim() && item.name !== 'Page' && item.name !== 'New Page') {
+            name = `${name} - ${item.name}`;
+          }
+          return { name, isRootPage: false };
+        }
+        default: {
+          const label = item.type
+            ? item.type.charAt(0).toUpperCase() + item.type.slice(1)
+            : 'Container';
+          return { name: `${label} ${String(position).padStart(2, '0')}`, isRootPage: false };
+        }
       }
-      if (key.startsWith(':survey_program:')) {
-        return resolveSurveyProgramKey(key);
-      }
-      return { location: 'Unknown Location', type: 'unknown' };
     };
 
-    // 1. :question: resolution
-    const resolveQuestionKey = (key: string): WhereUsedInfo => {
-      const questionField = questionFieldByTranslationKey.get(key);
-      if (!questionField?.key) {
-        return { location: 'Unknown Question Location', type: 'question' };
+    // Walks the container.id chain upward and returns a ' > '-joined path string.
+    // Returns '' when the element sits directly at the survey root (container is 'model').
+    const buildContainerPath = (containerId: string | undefined): string => {
+      if (!containerId || containerId.toLowerCase() === 'model') {
+        return '';
       }
 
-      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
-      if (!surveyModelElement) {
-        return { location: 'Unknown Question Location', type: 'question' };
+      const path: string[] = [];
+      let current: SurveyModelItem | undefined = surveyModelMap.get(containerId);
+
+      while (current) {
+        const { name, isRootPage } = buildPathElement(current);
+        path.unshift(name);
+        if (isRootPage) {
+          break;
+        }
+        const parentId = current.container?.id;
+        current = parentId ? surveyModelMap.get(parentId) : undefined;
       }
 
-      // Use survey_model[].position for Question numbering (position+1)
-      const questionNumber = (surveyModelElement.position ?? 0) + 1;
-
-      // Walk container.id chain upward to build full path including grids and sections
-      const containerPath = buildContainerPath(surveyModelElement.container?.id);
-
-      return {
-        location: `${surveyName} > ${containerPath} > Question ${String(questionNumber).padStart(2, '0')}`,
-        type: 'question',
-      };
+      return path.join(' > ');
     };
 
-    // 2. :alternative: resolution
-    const resolveAlternativeKey = (key: string): WhereUsedInfo => {
-      const altEntry = alternativeByTranslationKey.get(key);
-      if (!altEntry) {
-        return { location: 'Unknown Answer Location', type: 'alternative' };
-      }
-
-      const { alt: foundAlternative, altSet: foundAlternativeSet } = altEntry;
-      const answerNumber = (foundAlternative.sequence_number ?? 0) + 1;
-
-      const questionField = questionFieldByAltSetId.get(foundAlternativeSet.id);
-      if (!questionField?.key) {
-        return { location: `Answer ${String(answerNumber).padStart(2, '0')}`, type: 'alternative' };
-      }
-
-      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
-      if (!surveyModelElement) {
-        return { location: `Answer ${String(answerNumber).padStart(2, '0')}`, type: 'alternative' };
-      }
-
-      const questionNumber = (surveyModelElement.position ?? 0) + 1;
-
-      // Walk container.id chain upward to build full path
-      const containerPath = buildContainerPath(surveyModelElement.container?.id);
-
-      return {
-        location: `${surveyName} > ${containerPath} > Question ${String(questionNumber).padStart(2, '0')} > Answer ${String(answerNumber).padStart(2, '0')}`,
-        type: 'alternative',
-      };
-    };
-
-    // 3. :survey_program: resolution
-    const resolveSurveyProgramKey = (key: string): WhereUsedInfo => {
-      const foundElement = surveyModelByTranslationKey.get(key);
-      if (!foundElement) {
-        return { location: 'Unknown Survey Program Location', type: 'unknown' };
-      }
-
-      // Check type and determine element type
-      const elementType = getElementTypeName(foundElement.type);
-      const elementNumber = (foundElement.position ?? 0) + 1;
-
-      // Walk up containers to build full path
-      const containerPath = buildContainerPath(foundElement.container?.id);
-
-      return {
-        location: `${surveyName} > ${containerPath} > ${elementType} ${String(elementNumber).padStart(2, '0')}`,
-        type: foundElement.type,
-      };
-    };
-
-    // Helper to get element type name
     const getElementTypeName = (type: string | undefined): string => {
       switch (type?.toLowerCase()) {
         case 'text':
@@ -273,86 +292,95 @@ export class SurveysService extends BaseService {
       }
     };
 
-    // Helper to build container path with improved logic
-    const buildContainerPath = (containerId: string | undefined): string => {
-      if (!containerId) {
-        return 'Unknown Page';
+    // 1. :question: resolution
+    const resolveQuestionKey = (key: string): WhereUsedInfo => {
+      const questionField = questionFieldByTranslationKey.get(key);
+      if (!questionField?.key) {
+        return { location: null, type: 'question' };
       }
 
-      const path: string[] = [];
-      let currentContainer: SurveyModelItem | undefined = surveyModelMap.get(containerId);
-
-      while (currentContainer) {
-        const pathElement = buildPathElement(currentContainer);
-        if (pathElement.isRootPage) {
-          path.unshift(pathElement.name);
-          break;
-        } else {
-          path.unshift(pathElement.name);
-        }
-
-        // Move up the container chain
-        const parentId = currentContainer.container?.id;
-        currentContainer = parentId ? surveyModelMap.get(parentId) : undefined;
+      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
+      if (!surveyModelElement) {
+        return { location: null, type: 'question' };
       }
 
-      return path.length > 0 ? path.join(' > ') : 'Unknown Page';
+      const questionNumber = (surveyModelElement.position ?? 0) + 1;
+      const containerPath = buildContainerPath(surveyModelElement.container?.id);
+      return {
+        location: buildLocation(
+          surveyName,
+          containerPath,
+          `Question ${String(questionNumber).padStart(2, '0')}`
+        ),
+        type: 'question',
+      };
     };
 
-    // Helper to build individual path elements
-    const buildPathElement = (
-      container: SurveyModelItem
-    ): { name: string; isRootPage: boolean } => {
-      const position = (container.position ?? 0) + 1;
-
-      // Root level page is identified when type == "section" AND container.id == "model"
-      if (
-        container.type?.toLowerCase() === 'section' &&
-        container.container?.id?.toLowerCase() === 'model'
-      ) {
-        let pageName = `Page ${String(position).padStart(2, '0')}`;
-
-        // Add meaningful name if available
-        if (
-          container.name?.trim() &&
-          container.name.toLowerCase() !== 'page' &&
-          container.name.toLowerCase() !== 'new page'
-        ) {
-          pageName = `${pageName} - ${container.name}`;
-        }
-
-        return { name: pageName, isRootPage: true };
+    // 2. :alternative: resolution
+    const resolveAlternativeKey = (key: string): WhereUsedInfo => {
+      const altEntry = alternativeByTranslationKey.get(key);
+      if (!altEntry) {
+        return { location: null, type: 'alternative' };
       }
 
-      // Handle other container types
-      switch (container.type?.toLowerCase()) {
-        case 'section':
-          // Nested section
-          return {
-            name: container.name || `Section ${String(position).padStart(2, '0')}`,
-            isRootPage: false,
-          };
-        case 'end-section': {
-          // End section
-          let endSectionName = `Page ${String(position).padStart(2, '0')}`;
-          if (
-            container.name?.trim() &&
-            container.name !== 'Page' &&
-            container.name !== 'New Page'
-          ) {
-            endSectionName = `${endSectionName} - ${container.name}`;
-          }
-          return { name: endSectionName, isRootPage: false };
-        }
-        default: {
-          // Other containers (Grid, etc.)
-          const containerType = container.type.charAt(0).toUpperCase() + container.type.slice(1);
-          return {
-            name: `${containerType} ${String(position).padStart(2, '0')}`,
-            isRootPage: false,
-          };
-        }
+      const { alt: foundAlternative, altSet: foundAlternativeSet } = altEntry;
+      const answerNumber = (foundAlternative.sequence_number ?? 0) + 1;
+      const answerLabel = `Answer ${String(answerNumber).padStart(2, '0')}`;
+
+      const questionField = questionFieldByAltSetId.get(foundAlternativeSet.id);
+      if (!questionField?.key) {
+        return { location: answerLabel, type: 'alternative' };
       }
+
+      const surveyModelElement = surveyModelByFieldId.get(questionField.key);
+      if (!surveyModelElement) {
+        return { location: answerLabel, type: 'alternative' };
+      }
+
+      const questionNumber = (surveyModelElement.position ?? 0) + 1;
+      const containerPath = buildContainerPath(surveyModelElement.container?.id);
+      return {
+        location: buildLocation(
+          surveyName,
+          containerPath,
+          `Question ${String(questionNumber).padStart(2, '0')}`,
+          answerLabel
+        ),
+        type: 'alternative',
+      };
+    };
+
+    // 3. :survey_program: resolution
+    const resolveSurveyProgramKey = (key: string): WhereUsedInfo => {
+      const foundElement = surveyModelByTranslationKey.get(key);
+      if (!foundElement) {
+        return { location: null, type: 'unknown' };
+      }
+
+      const elementType = getElementTypeName(foundElement.type);
+      const elementNumber = (foundElement.position ?? 0) + 1;
+      const containerPath = buildContainerPath(foundElement.container?.id);
+      return {
+        location: buildLocation(
+          surveyName,
+          containerPath,
+          `${elementType} ${String(elementNumber).padStart(2, '0')}`
+        ),
+        type: foundElement.type,
+      };
+    };
+
+    const resolve = (key: string): WhereUsedInfo => {
+      if (key.startsWith(':question:')) {
+        return resolveQuestionKey(key);
+      }
+      if (key.startsWith(':alternative:')) {
+        return resolveAlternativeKey(key);
+      }
+      if (key.startsWith(':survey_program:')) {
+        return resolveSurveyProgramKey(key);
+      }
+      return { location: null, type: 'unknown' };
     };
 
     // Pre-build the map by processing all possible translation keys upfront

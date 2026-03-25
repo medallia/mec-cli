@@ -1,4 +1,5 @@
 import { EMOJIS } from '../../core/config/constants';
+
 import { Colors } from './colors';
 
 export class OutputFormatter {

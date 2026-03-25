@@ -6,9 +6,9 @@ import axios, {
 } from 'axios';
 
 import { log } from '../../../utils';
+import { AuthenticationError } from '../../../utils/errors';
 import { EMOJIS } from '../../config/constants';
 import { Profile } from '../../config/types';
-import { AuthenticationError } from '../../../utils/errors';
 
 // Profile management for authentication
 const profileStore: Map<string, Profile> = new Map();
@@ -88,10 +88,7 @@ export class RequestInterceptor {
       return access_token;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown';
-      log.error(
-        `${EMOJIS.ERROR} Authentication failed`,
-        message
-      );
+      log.error(`${EMOJIS.ERROR} Authentication failed`, message);
       throw new AuthenticationError(`Authentication failed: ${message}`);
     }
   }

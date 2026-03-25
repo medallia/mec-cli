@@ -178,11 +178,21 @@ export function createYargsParser() {
             description: 'Filter survey programs by UUID',
           })
           .check(argv => {
-            if (argv[CLI_OPTIONS.SURVEYS.NAME] !== undefined && !String(argv[CLI_OPTIONS.SURVEYS.NAME]).trim()) {
-              throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.NAME)} value must not be empty`);
+            if (
+              argv[CLI_OPTIONS.SURVEYS.NAME] !== undefined &&
+              !String(argv[CLI_OPTIONS.SURVEYS.NAME]).trim()
+            ) {
+              throw new ValidationError(
+                `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.NAME)} value must not be empty`
+              );
             }
-            if (argv[CLI_OPTIONS.SURVEYS.UUID] !== undefined && !String(argv[CLI_OPTIONS.SURVEYS.UUID]).trim()) {
-              throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.UUID)} value must not be empty`);
+            if (
+              argv[CLI_OPTIONS.SURVEYS.UUID] !== undefined &&
+              !String(argv[CLI_OPTIONS.SURVEYS.UUID]).trim()
+            ) {
+              throw new ValidationError(
+                `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.UUID)} value must not be empty`
+              );
             }
             return true;
           })
@@ -219,13 +229,15 @@ export function createYargsParser() {
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID, {
               type: 'string',
               array: true,
-              description: 'UUID(s) of the survey program(s) (download only). Supports multiple values.',
+              description:
+                'UUID(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME, {
               type: 'string',
               array: true,
-              description: 'Name(s) of the survey program(s) (download only). Supports multiple values.',
+              description:
+                'Name(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.LANGUAGES, {
@@ -276,12 +288,16 @@ export function createYargsParser() {
                 // Guard against blank values like --survey-uuid ""
                 const uuids = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
                 if (uuids?.some(v => !String(v).trim())) {
-                  throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`);
+                  throw new ValidationError(
+                    `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`
+                  );
                 }
 
                 const names = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
                 if (names?.some(v => !String(v).trim())) {
-                  throw new ValidationError(`${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`);
+                  throw new ValidationError(
+                    `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`
+                  );
                 }
               }
 

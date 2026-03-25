@@ -48,10 +48,14 @@ export class TranslationsCommand implements ICommand {
         // Collect all surveys to process — fetch UUIDs and names in parallel
         const [surveyUuidResults, surveyNameResults] = await Promise.all([
           uniqueSurveyUuids.length > 0
-            ? Promise.all(uniqueSurveyUuids.map(uuid => surveyService.getSurveyByUuid(uuid as string)))
+            ? Promise.all(
+                uniqueSurveyUuids.map(uuid => surveyService.getSurveyByUuid(uuid as string))
+              )
             : Promise.resolve([]),
           uniqueSurveyNames.length > 0
-            ? Promise.all(uniqueSurveyNames.map(name => surveyService.getSurveyByName(name as string)))
+            ? Promise.all(
+                uniqueSurveyNames.map(name => surveyService.getSurveyByName(name as string))
+              )
             : Promise.resolve([]),
         ]);
 

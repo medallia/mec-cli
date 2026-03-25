@@ -9,7 +9,7 @@ import { API_DEFAULTS, EMOJIS, ERROR_CODES, FILE_EXTENSIONS } from '../../config
 import { Profile } from '../../config/types';
 import { BaseService } from '../base';
 import { SurveysService } from '../surveys';
-import { SurveyFlatViewResponse, WhereUsedInfo } from '../surveys/types';
+import { SurveyFlatViewResponse, WhereUsedInfo, WhereUsedAccumulator } from '../surveys/types';
 
 import { TRANSLATIONS_ENDPOINTS, TRANSLATIONS_STATUS, FILE_PROCESSING } from './constants';
 import {
@@ -44,7 +44,7 @@ export class TranslationsService extends BaseService {
     log.info(
       `${EMOJIS.LOADING} Downloading translations for survey(s): ${options.surveys.map(survey => `${survey.name} (${survey.id})`).join(', ')} ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
     );
-    
+
     for (const survey of options.surveys) {
       if (survey.translation_tag_id === null) {
         log.error(
@@ -61,7 +61,9 @@ export class TranslationsService extends BaseService {
       data: {
         type: 'translation-export',
         file_format: 'excel',
-        translation_tag_ids: options.surveys.map(survey => ({ id: `${survey.translation_tag_id}` })),
+        translation_tag_ids: options.surveys.map(survey => ({
+          id: `${survey.translation_tag_id}`,
+        })),
         translation_locale_ids: [],
         translation_categories: [
           'questions',
@@ -85,7 +87,9 @@ export class TranslationsService extends BaseService {
       'Export'
     );
 
-    const flatViewPromises = options.surveys.map(survey => this.surveysService.getSurveyFlatView(survey.id));
+    const flatViewPromises = options.surveys.map(survey =>
+      this.surveysService.getSurveyFlatView(survey.id)
+    );
 
     // Wait for both operations to complete
     const [, surveyFlatViewResponses] = await Promise.all([
@@ -101,10 +105,11 @@ export class TranslationsService extends BaseService {
     const isMultiSurvey = options.surveys.length > 1;
     const rawSurveyIdsPart = options.surveys.map(survey => survey.id).join('_');
     // Truncate survey IDs part if it's too long to avoid file system 255 character limit issues (considering additional suffixes and extensions)
-    const truncatedSurveyIdsPart = rawSurveyIdsPart.length > 200
-      ? rawSurveyIdsPart.slice(0, 200)
-      : rawSurveyIdsPart;
-    const surveyIdsPart = isMultiSurvey ? `${truncatedSurveyIdsPart}-multi` : truncatedSurveyIdsPart;
+    const truncatedSurveyIdsPart =
+      rawSurveyIdsPart.length > 200 ? rawSurveyIdsPart.slice(0, 200) : rawSurveyIdsPart;
+    const surveyIdsPart = isMultiSurvey
+      ? `${truncatedSurveyIdsPart}-multi`
+      : truncatedSurveyIdsPart;
     const simplifiedTranslationsFileName = `${surveyIdsPart}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
     const simplifiedTranslationsFilePath = PathUtils.join(
       options.outputPath,
@@ -246,39 +251,43 @@ export class TranslationsService extends BaseService {
         throw new ValidationError('Required columns (Key, Original text) not found');
       }
 
-      // Build "Where Used" mapping using pre-fetched data with survey names
-      // Combine all whereUsed maps into a single map
-      const combinedWhereUsedMap = new Map<string, WhereUsedInfo>();
-      const keyLocationMap = new Map<string, { locations: Set<string>, type?: string }>();
+      // Build combined "Where Used" map across all surveys.
+      // For each key: accumulate all non-unknown location strings (deduped via Set)
+      // and resolve the effective type, where 'html' takes priority so that the
+      // includeHtmlBlocks filter is applied correctly even across multiple surveys.
+      const accumulator = new Map<string, WhereUsedAccumulator>();
 
-      surveyFlatViewResponses.forEach((surveyFlatViewResponse, index) => {
+      for (const [index, surveyFlatViewResponse] of surveyFlatViewResponses.entries()) {
         const surveyName = options.surveys[index].name;
-        const whereUsedMap = this.surveysService.buildWhereUsedMap(surveyName, surveyFlatViewResponse);
-        
-        // Process each key from the pre-built map
-        whereUsedMap.forEach((result, key) => {
-          if (!keyLocationMap.has(key)) {
-            keyLocationMap.set(key, { locations: new Set<string>(), type: result.type });
-          } else if (result.type === 'html') {
-            // If any survey reports this key as html, treat the merged entry as html
-            // so the includeHtmlBlocks filter is applied correctly across all surveys
-            keyLocationMap.get(key)!.type = 'html';
-          }
-          // Only include non-unknown locations in the display text, but always
-          // preserve the entry and its type so HTML-block filtering works correctly
-          if (!result.location.includes('Unknown')) {
-            keyLocationMap.get(key)!.locations.add(result.location);
-          }
-        });
-      });
+        const whereUsedMap = this.surveysService.buildWhereUsedMap(
+          surveyName,
+          surveyFlatViewResponse
+        );
 
-      // Build final combined map with joined locations
-      keyLocationMap.forEach((value, key) => {
-        combinedWhereUsedMap.set(key, {
-          location: [...value.locations].join(',\n'),
-          type: value.type || 'unknown'
-        });
-      });
+        for (const [key, result] of whereUsedMap) {
+          const existing = accumulator.get(key);
+          if (!existing) {
+            accumulator.set(key, {
+              locations: new Set(result.location !== null ? [result.location] : []),
+              type: result.type,
+            });
+          } else {
+            if (result.type === 'html') {
+              existing.type = 'html';
+            } // html takes priority over other types
+            if (result.location !== null) {
+              existing.locations.add(result.location);
+            }
+          }
+        }
+      }
+
+      const combinedWhereUsedMap = new Map<string, WhereUsedInfo>(
+        [...accumulator.entries()].map(([key, value]) => [
+          key,
+          { location: [...value.locations].join(',\n'), type: value.type },
+        ])
+      );
 
       // Filter rows
       const filteredRows: (string | number | undefined)[][] = [];
@@ -397,7 +406,7 @@ export class TranslationsService extends BaseService {
           return rowValues[idx] ?? '';
         });
         const row = outputWorksheet.addRow(outputRow);
-        
+
         // Enable text wrapping for the "Where Used" cell to show line breaks
         if (whereUsedColIndex > 0 && whereUsedValue.includes('\n')) {
           row.getCell(whereUsedColIndex).alignment = { wrapText: true, vertical: 'middle' };
