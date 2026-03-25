@@ -130,8 +130,8 @@ export class SurveysService extends BaseService {
 
     // Some UUIDs (e.g., ".", "#") cause the URL to be altered and the API returns 200 with an empty
     // response instead of 404, so check for a valid name to detect when the survey is not found.
-    if (response.name == null) {
-      log.error(`Survey with UUID "${surveyUuid}" not found (empty response)`);
+    if (!response || typeof response !== 'object' || response.name == null) {
+      log.error(`Survey with UUID "${surveyUuid}" not found (empty or invalid response)`);
       throw new ValidationError(notFoundErrorMessage);
     }
     log.info(`${EMOJIS.SUCCESS} Retrieved survey "${response.name}" for UUID "${surveyUuid}"`);

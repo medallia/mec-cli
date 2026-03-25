@@ -612,7 +612,7 @@ export class TranslationsService extends BaseService {
       return outputFilePath;
     } catch (e) {
       if (e instanceof Error && (e as NodeJS.ErrnoException).code === 'ENAMETOOLONG') {
-        throw new ValidationError("The file name is too long. Try using a shorter file name.");
+        throw new ValidationError('The file name is too long. Try using a shorter file name.');
       }
       log.error(`${EMOJIS.ERROR} Error processing file for upload: ${String(e)}`);
       throw e;
