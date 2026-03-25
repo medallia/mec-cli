@@ -285,7 +285,10 @@ export class TranslationsService extends BaseService {
       const combinedWhereUsedMap = new Map<string, WhereUsedInfo>(
         [...accumulator.entries()].map(([key, value]) => [
           key,
-          { location: [...value.locations].join(',\n'), type: value.type },
+          {
+            location: value.locations.size > 0 ? [...value.locations].join(',\n') : null,
+            type: value.type,
+          },
         ])
       );
 
@@ -608,6 +611,9 @@ export class TranslationsService extends BaseService {
       await outputWorkbook.xlsx.writeFile(outputFilePath);
       return outputFilePath;
     } catch (e) {
+      if (e instanceof Error && (e as NodeJS.ErrnoException).code === 'ENAMETOOLONG') {
+        throw new ValidationError("The file name is too long. Try using a shorter file name.");
+      }
       log.error(`${EMOJIS.ERROR} Error processing file for upload: ${String(e)}`);
       throw e;
     }

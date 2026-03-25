@@ -39,7 +39,6 @@ export interface TranslationContext {
 export interface TranslationDownloadResult {
   processedFilePath: string;
   rawTranslationsFilePath?: string;
-  surveySpecFilePath?: string;
   missingLanguages: string[];
 }
 
