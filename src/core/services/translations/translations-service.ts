@@ -514,6 +514,7 @@ export class TranslationsService extends BaseService {
           method: 'GET',
           url: TRANSLATIONS_ENDPOINTS.IMPORT_CHANGES(importId),
         });
+        this.normalizeAndDeduplicateChanges(changes);
         this.cleanupTempFile(processedFilePath, isDebugEnabled);
         return changes;
       }
@@ -528,6 +529,43 @@ export class TranslationsService extends BaseService {
       this.cleanupTempFile(processedFilePath, isDebugEnabled);
       throw error;
     }
+  }
+
+  /**
+   * Normalizes and deduplicates a changes response in-place.
+   *
+   * When a user edits a translation item once in the Excel file, the upload
+   * process programmatically applies that edit to multiple context rows:
+   *   - "In survey"        → maps to the survey-only.surv    context
+   *   - "In mobile survey" → maps to the survey-only.survMobile context
+   *
+   * This means the API returns one change entry per context variant, so a
+   * single user edit can appear 2+ times in the changes list. To avoid
+   * showing the same logical change multiple times, we deduplicate by the
+   * combination of (translation_item key, locale_id) — which uniquely
+   * identifies one translation string for one language, regardless of context.
+   */
+  private normalizeAndDeduplicateChanges(changes: TranslationImportChangesResponse): void {
+    const seen = new Set<string>();
+    const uniqueItems: TranslationImportChangesResponse['items'] = [];
+
+    for (const item of changes.items) {
+      // Resolve the locale UUID from the linked locale resource URL
+      const localeHref = item._links?.translation_locale?.href ?? '';
+      item.locale_id = localeHref.split('/').pop() || 'unknown';
+
+      // Deduplicate: one entry per (translation item key × locale)
+      const translationItemHref = item._links?.translation_item?.href ?? item.id;
+      const dedupeKey = `${translationItemHref}|${item.locale_id}`;
+
+      if (!seen.has(dedupeKey)) {
+        seen.add(dedupeKey);
+        uniqueItems.push(item);
+      }
+    }
+
+    changes.items = uniqueItems;
+    changes._total = uniqueItems.length;
   }
 
   /**

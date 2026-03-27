@@ -10,7 +10,7 @@ export const TRANSLATIONS_ENDPOINTS = {
 } as const;
 
 export const FILE_PROCESSING = {
-  EXCEL_SHEET_NAME: 'Translations (v1)',
+  EXCEL_SHEET_NAME: 'Translations (v1.2)',
   RAW_TRANSLATIONS_SUFFIX: 'raw-translations',
   PROCESSED_TRANSLATIONS_SUFFIX: 'processed-translations',
   SURVEY_SPEC_SUFFIX: 'survey-spec',

@@ -182,11 +182,11 @@ export class TableFormatter {
       head: [
         Colors.tableHeader('ID'),
         Colors.tableHeader('Type'),
-        Colors.tableHeader('Category'),
+        Colors.tableHeader('Locale ID'),
         Colors.tableHeader('Old Text'),
         Colors.tableHeader('New Text'),
       ],
-      colWidths: [5, 14, 22, 38, 38],
+      colWidths: [5, 14, 38, 38, 38],
       style: {
         head: [],
         border: ['gray'],
@@ -197,7 +197,7 @@ export class TableFormatter {
       table.push([
         Colors.tableIndex((index + 1).toString()),
         Colors.tableContent(change.type || ''),
-        Colors.tableContent(change.translation_category || ''),
+        Colors.tableContent(change.locale_id || ''),
         Colors.muted(change.old_text || ''),
         Colors.success(change.new_text || ''),
       ]);

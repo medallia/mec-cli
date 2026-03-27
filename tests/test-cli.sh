@@ -117,7 +117,7 @@ run_test "Translations Download multiple UUIDs accepted by parser" \
   "false"
 # Parser accepts multiple --survey-name flags; command fails at API call, which is expected
 run_test "Translations Download multiple names accepted by parser" \
-  "npm run dev -- translations download --survey-name 'Survey A' --survey-name 'Survey B' 2>/dev/null" \
+  "npm run dev -- translations download --survey-name 'Survey Dummy A' --survey-name 'Survey Dummy B' 2>/dev/null" \
   "false"
 # Parser accepts --survey-uuid and --survey-name together; command fails at API call, which is expected
 run_test "Translations Download UUID and name together accepted by parser" \
