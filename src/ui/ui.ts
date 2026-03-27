@@ -73,6 +73,7 @@ export class UI {
     surveys: SurveyItem[],
     getAdminSurveyEditorUrlById: (_id: string) => string
   ): void {
+    // To avoid displaying an empty table when no surveys are found, show a warning instead
     if (surveys.length === 0) {
       console.log(this.output.formatWarning('No survey programs found'));
       return;

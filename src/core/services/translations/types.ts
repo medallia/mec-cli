@@ -1,7 +1,7 @@
 import { SurveyItem } from '../surveys';
 
 export interface DownloadTranslationsOptions {
-  survey: SurveyItem;
+  surveys: SurveyItem[];
   outputPath: string;
   saveDebugFiles: boolean;
   languages: string;
@@ -39,7 +39,6 @@ export interface TranslationContext {
 export interface TranslationDownloadResult {
   processedFilePath: string;
   rawTranslationsFilePath?: string;
-  surveySpecFilePath?: string;
   missingLanguages: string[];
 }
 
@@ -120,6 +119,11 @@ export interface TranslationImportChangesResponse {
   _allowed: string[];
 }
 
+export interface TranslationImportChangesItemLinks {
+  translation_locale?: { href: string; rel: string | null } | null;
+  translation_item?: { href: string; rel: string | null } | null;
+}
+
 export interface TranslationImportChangesItem {
   id: string;
   new_text: string;
@@ -129,6 +133,8 @@ export interface TranslationImportChangesItem {
   type: string;
   error_code?: string;
   error_message?: string;
+  locale_id?: string; // Custom addition to API response for easier access during processing
+  _links?: TranslationImportChangesItemLinks;
 }
 
 export interface TranslationIssueItem {

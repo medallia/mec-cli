@@ -9,7 +9,7 @@ import { API_DEFAULTS, EMOJIS, ERROR_CODES, FILE_EXTENSIONS } from '../../config
 import { Profile } from '../../config/types';
 import { BaseService } from '../base';
 import { SurveysService } from '../surveys';
-import { SurveyFlatViewResponse } from '../surveys/types';
+import { SurveyFlatViewResponse, WhereUsedInfo, WhereUsedAccumulator } from '../surveys/types';
 
 import { TRANSLATIONS_ENDPOINTS, TRANSLATIONS_STATUS, FILE_PROCESSING } from './constants';
 import {
@@ -42,14 +42,16 @@ export class TranslationsService extends BaseService {
   ): Promise<TranslationDownloadResult> {
     const isDebugEnabled = options.saveDebugFiles;
     log.info(
-      `${EMOJIS.LOADING} Downloading translations for survey: ${options.survey.name} (${options.survey.id}) ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
+      `${EMOJIS.LOADING} Downloading translations for survey(s): ${options.surveys.map(survey => `${survey.name} (${survey.id})`).join(', ')} ${isDebugEnabled ? '(Debug mode enabled)' : ''}`
     );
 
-    if (options.survey.translation_tag_id === null) {
-      log.error(
-        `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${options.survey.name} (${options.survey.id})`
-      );
-      return Promise.reject(new ValidationError('No survey version found'));
+    for (const survey of options.surveys) {
+      if (survey.translation_tag_id === null) {
+        log.error(
+          `${EMOJIS.ERROR} Cannot find translation tag ID for survey: ${survey.name} (${survey.id})`
+        );
+        throw new ValidationError(`No survey version found for: ${survey.name} (${survey.id})`);
+      }
     }
 
     // Start export job
@@ -59,7 +61,9 @@ export class TranslationsService extends BaseService {
       data: {
         type: 'translation-export',
         file_format: 'excel',
-        translation_tag_ids: [{ id: `${options.survey.translation_tag_id}` }],
+        translation_tag_ids: options.surveys.map(survey => ({
+          id: `${survey.translation_tag_id}`,
+        })),
         translation_locale_ids: [],
         translation_categories: [
           'questions',
@@ -83,12 +87,14 @@ export class TranslationsService extends BaseService {
       'Export'
     );
 
-    const flatViewPromise = this.surveysService.getSurveyFlatView(options.survey.id);
+    const flatViewPromises = options.surveys.map(survey =>
+      this.surveysService.getSurveyFlatView(survey.id)
+    );
 
     // Wait for both operations to complete
-    const [, surveyFlatViewResponse] = await Promise.all([
+    const [, surveyFlatViewResponses] = await Promise.all([
       exportCompletionPromise,
-      flatViewPromise,
+      Promise.all(flatViewPromises),
     ]);
 
     // Generate file paths
@@ -96,24 +102,36 @@ export class TranslationsService extends BaseService {
       .toISOString()
       .replace(/[-:]/g, '')
       .replace(/\.\d{3}/, '');
-    const simplifiedTranslationsFileName = `${options.survey.id}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
+    const isMultiSurvey = options.surveys.length > 1;
+    const rawSurveyIdsPart = options.surveys.map(survey => survey.id).join('_');
+    // Truncate survey IDs part if it's too long to avoid file system 255 character limit issues (considering additional suffixes and extensions)
+    const truncatedSurveyIdsPart =
+      rawSurveyIdsPart.length > 200 ? rawSurveyIdsPart.slice(0, 200) : rawSurveyIdsPart;
+    const surveyIdsPart = isMultiSurvey
+      ? `${truncatedSurveyIdsPart}-multi`
+      : truncatedSurveyIdsPart;
+    const simplifiedTranslationsFileName = `${surveyIdsPart}-${timestamp}${FILE_EXTENSIONS.EXCEL}`;
     const simplifiedTranslationsFilePath = PathUtils.join(
       options.outputPath,
       simplifiedTranslationsFileName
     );
-    const rawTranslationsFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
+    const rawTranslationsFileName = `${surveyIdsPart}-${timestamp}-${FILE_PROCESSING.RAW_TRANSLATIONS_SUFFIX}${FILE_EXTENSIONS.EXCEL}`;
     const rawTranslationsFilePath = isDebugEnabled
       ? PathUtils.join(options.outputPath, rawTranslationsFileName)
       : this.fsAdapter.getTempFilePath(rawTranslationsFileName);
-    const surveyFlatViewFileName = `${options.survey.id}-${timestamp}-${FILE_PROCESSING.SURVEY_SPEC_SUFFIX}${FILE_EXTENSIONS.JSON}`;
-    if (isDebugEnabled) {
-      const surveyFlatViewFilePath = PathUtils.join(options.outputPath, surveyFlatViewFileName);
-      this.fsAdapter.writeFileSync(
-        surveyFlatViewFilePath,
-        JSON.stringify(surveyFlatViewResponse, null, 2)
-      );
-      log.info(`${EMOJIS.FILE} Survey spec file saved to: ${surveyFlatViewFilePath}`);
-    }
+
+    options.surveys.forEach((survey, index) => {
+      const surveyFlatViewResponse = surveyFlatViewResponses[index];
+      const surveyFlatViewFileName = `${survey.id}-${timestamp}-${FILE_PROCESSING.SURVEY_SPEC_SUFFIX}${FILE_EXTENSIONS.JSON}`;
+      if (isDebugEnabled) {
+        const surveyFlatViewFilePath = PathUtils.join(options.outputPath, surveyFlatViewFileName);
+        this.fsAdapter.writeFileSync(
+          surveyFlatViewFilePath,
+          JSON.stringify(surveyFlatViewResponse, null, 2)
+        );
+        log.info(`${EMOJIS.FILE} Survey spec file saved to: ${surveyFlatViewFilePath}`);
+      }
+    });
 
     try {
       // Download file
@@ -138,19 +156,18 @@ export class TranslationsService extends BaseService {
         requestedLanguages,
         missingLanguages,
         options,
-        surveyFlatViewResponse
+        surveyFlatViewResponses
       );
 
       this.cleanupTempFile(rawTranslationsFilePath, isDebugEnabled);
 
       log.info(
-        `${EMOJIS.SUCCESS} Downloaded ${simplifiedTranslationsFilePath.split('/').pop()} translations for survey: ${options.survey.name}`
+        `${EMOJIS.SUCCESS} Downloaded ${PathUtils.basename(simplifiedTranslationsFilePath)} translations for survey(s): ${options.surveys.map(s => s.name).join(', ')}`
       );
 
       return {
         processedFilePath: simplifiedTranslationsFilePath,
         rawTranslationsFilePath: isDebugEnabled ? rawTranslationsFilePath : '',
-        surveySpecFilePath: '',
         missingLanguages,
       };
     } catch (error) {
@@ -177,7 +194,7 @@ export class TranslationsService extends BaseService {
     languages: string[],
     missingLanguages: string[],
     options: DownloadTranslationsOptions,
-    surveyFlatViewResponse: SurveyFlatViewResponse
+    surveyFlatViewResponses: SurveyFlatViewResponse[]
   ): Promise<string> {
     try {
       // Read input file
@@ -234,8 +251,46 @@ export class TranslationsService extends BaseService {
         throw new ValidationError('Required columns (Key, Original text) not found');
       }
 
-      // Build "Where Used" mapping using pre-fetched data
-      const whereUsedMap = await this.surveysService.buildWhereUsedMap(surveyFlatViewResponse);
+      // Build combined "Where Used" map across all surveys.
+      // For each key: accumulate all non-unknown location strings (deduped via Set)
+      // and resolve the effective type, where 'html' takes priority so that the
+      // includeHtmlBlocks filter is applied correctly even across multiple surveys.
+      const accumulator = new Map<string, WhereUsedAccumulator>();
+
+      for (const [index, surveyFlatViewResponse] of surveyFlatViewResponses.entries()) {
+        const surveyName = options.surveys[index].name;
+        const whereUsedMap = this.surveysService.buildWhereUsedMap(
+          surveyName,
+          surveyFlatViewResponse
+        );
+
+        for (const [key, result] of whereUsedMap) {
+          const existing = accumulator.get(key);
+          if (!existing) {
+            accumulator.set(key, {
+              locations: new Set(result.location !== null ? [result.location] : []),
+              type: result.type,
+            });
+          } else {
+            if (result.type === 'html') {
+              existing.type = 'html';
+            } // html takes priority over other types
+            if (result.location !== null) {
+              existing.locations.add(result.location);
+            }
+          }
+        }
+      }
+
+      const combinedWhereUsedMap = new Map<string, WhereUsedInfo>(
+        [...accumulator.entries()].map(([key, value]) => [
+          key,
+          {
+            location: value.locations.size > 0 ? [...value.locations].join(',\n') : null,
+            type: value.type,
+          },
+        ])
+      );
 
       // Filter rows
       const filteredRows: (string | number | undefined)[][] = [];
@@ -262,7 +317,7 @@ export class TranslationsService extends BaseService {
             ? (row.getCell(originalTextColIndex + 1).value?.toString() ?? '')
             : '';
         const keyValue = rowValues[keyColIdx]?.toString() ?? '';
-        const whereUsedInfo = whereUsedMap.get(keyValue);
+        const whereUsedInfo = combinedWhereUsedMap.get(keyValue);
 
         // Skip blank rows
         if (originalTextValue.trim().toLowerCase() === '[blank]') {
@@ -292,7 +347,7 @@ export class TranslationsService extends BaseService {
       outputHeaders.splice(1, 0, -1, -2); // Add Where Used and Notes to Translator after Key
       const headerRowWithExtraColumns = outputHeaders.map(idx => {
         if (idx === -1) {
-          return 'Where Used';
+          return 'Where Used (applies to selected surveys only)';
         }
         if (idx === -2) {
           return 'Notes to Translator';
@@ -329,12 +384,18 @@ export class TranslationsService extends BaseService {
         column.width = Math.max(headerLength + 2, 12);
       });
 
+      // Set wider width for "Where Used" column to accommodate multi-line content
+      const whereUsedColIndex = outputHeaders.indexOf(-1) + 1;
+      if (whereUsedColIndex > 0) {
+        outputWorksheet.getColumn(whereUsedColIndex).width = 50;
+      }
+
       // Add data rows
       filteredRows.forEach(rowValues => {
         const keyValue = rowValues[keyColIdx]?.toString() ?? '';
         const originalTextValue = rowValues[originalTextColIndex]?.toString() ?? '';
 
-        const whereUsedInfo = whereUsedMap.get(keyValue);
+        const whereUsedInfo = combinedWhereUsedMap.get(keyValue);
         const whereUsedValue = whereUsedInfo?.location || '';
         const notesToTranslator = this.generateNotesToTranslator(originalTextValue);
 
@@ -347,7 +408,12 @@ export class TranslationsService extends BaseService {
           }
           return rowValues[idx] ?? '';
         });
-        outputWorksheet.addRow(outputRow);
+        const row = outputWorksheet.addRow(outputRow);
+
+        // Enable text wrapping for the "Where Used" cell to show line breaks
+        if (whereUsedColIndex > 0 && whereUsedValue.includes('\n')) {
+          row.getCell(whereUsedColIndex).alignment = { wrapText: true, vertical: 'middle' };
+        }
       });
 
       await outputWorkbook.xlsx.writeFile(outputFilePath);
@@ -448,6 +514,7 @@ export class TranslationsService extends BaseService {
           method: 'GET',
           url: TRANSLATIONS_ENDPOINTS.IMPORT_CHANGES(importId),
         });
+        this.normalizeAndDeduplicateChanges(changes);
         this.cleanupTempFile(processedFilePath, isDebugEnabled);
         return changes;
       }
@@ -462,6 +529,43 @@ export class TranslationsService extends BaseService {
       this.cleanupTempFile(processedFilePath, isDebugEnabled);
       throw error;
     }
+  }
+
+  /**
+   * Normalizes and deduplicates a changes response in-place.
+   *
+   * When a user edits a translation item once in the Excel file, the upload
+   * process programmatically applies that edit to multiple context rows:
+   *   - "In survey"        → maps to the survey-only.surv    context
+   *   - "In mobile survey" → maps to the survey-only.survMobile context
+   *
+   * This means the API returns one change entry per context variant, so a
+   * single user edit can appear 2+ times in the changes list. To avoid
+   * showing the same logical change multiple times, we deduplicate by the
+   * combination of (translation_item key, locale_id) — which uniquely
+   * identifies one translation string for one language, regardless of context.
+   */
+  private normalizeAndDeduplicateChanges(changes: TranslationImportChangesResponse): void {
+    const seen = new Set<string>();
+    const uniqueItems: TranslationImportChangesResponse['items'] = [];
+
+    for (const item of changes.items) {
+      // Resolve the locale UUID from the linked locale resource URL
+      const localeHref = item._links?.translation_locale?.href ?? '';
+      item.locale_id = localeHref.split('/').pop() || 'unknown';
+
+      // Deduplicate: one entry per (translation item key × locale)
+      const translationItemHref = item._links?.translation_item?.href ?? item.id;
+      const dedupeKey = `${translationItemHref}|${item.locale_id}`;
+
+      if (!seen.has(dedupeKey)) {
+        seen.add(dedupeKey);
+        uniqueItems.push(item);
+      }
+    }
+
+    changes.items = uniqueItems;
+    changes._total = uniqueItems.length;
   }
 
   /**
@@ -528,7 +632,7 @@ export class TranslationsService extends BaseService {
 
       // Generate output file path
       const originalFileName = FileValidator.sanitizeFilename(
-        filePath.split('/').pop() || 'translations.xlsx'
+        PathUtils.basename(filePath) || 'translations.xlsx'
       );
       const originalFileNameWithoutExtension =
         PathUtils.getFileNameWithoutExtension(originalFileName);
@@ -545,6 +649,9 @@ export class TranslationsService extends BaseService {
       await outputWorkbook.xlsx.writeFile(outputFilePath);
       return outputFilePath;
     } catch (e) {
+      if (e instanceof Error && (e as NodeJS.ErrnoException).code === 'ENAMETOOLONG') {
+        throw new ValidationError('The file name is too long. Try using a shorter file name.');
+      }
       log.error(`${EMOJIS.ERROR} Error processing file for upload: ${String(e)}`);
       throw e;
     }
@@ -558,7 +665,7 @@ export class TranslationsService extends BaseService {
 
     const formData = new FormData();
     const fileName = FileValidator.sanitizeFilename(
-      filePath.split('/').pop() || 'translations.xlsx'
+      PathUtils.basename(filePath) || 'translations.xlsx'
     );
     formData.append('file', this.fsAdapter.createReadStream(filePath), fileName);
 

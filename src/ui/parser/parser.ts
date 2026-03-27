@@ -177,6 +177,25 @@ export function createYargsParser() {
             type: 'string',
             description: 'Filter survey programs by UUID',
           })
+          .check(argv => {
+            if (
+              argv[CLI_OPTIONS.SURVEYS.NAME] !== undefined &&
+              !String(argv[CLI_OPTIONS.SURVEYS.NAME]).trim()
+            ) {
+              throw new ValidationError(
+                `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.NAME)} value must not be empty`
+              );
+            }
+            if (
+              argv[CLI_OPTIONS.SURVEYS.UUID] !== undefined &&
+              !String(argv[CLI_OPTIONS.SURVEYS.UUID]).trim()
+            ) {
+              throw new ValidationError(
+                `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.SURVEYS.UUID)} value must not be empty`
+              );
+            }
+            return true;
+          })
           .example(`$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST}`, 'List all surveys')
           .example(
             `$0 ${COMMANDS.SURVEYS} ${SUB_COMMANDS.SURVEYS.LIST} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.PROFILE)} caspian-prod`,
@@ -209,12 +228,16 @@ export function createYargsParser() {
             // Download-specific options
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID, {
               type: 'string',
-              description: 'UUID of the survey program (download only)',
+              array: true,
+              description:
+                'UUID(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME, {
               type: 'string',
-              description: 'Name of the survey program (download only)',
+              array: true,
+              description:
+                'Name(s) of the survey program(s) (download only). Supports multiple values.',
               requiresArg: true,
             })
             .option(CLI_OPTIONS.TRANSLATIONS.LANGUAGES, {
@@ -261,6 +284,21 @@ export function createYargsParser() {
                     `For download: either ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} or ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} must be provided`
                   );
                 }
+
+                // Guard against blank values like --survey-uuid ""
+                const uuids = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID];
+                if (uuids?.some(v => !String(v).trim())) {
+                  throw new ValidationError(
+                    `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} values must not be empty`
+                  );
+                }
+
+                const names = argv[CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME];
+                if (names?.some(v => !String(v).trim())) {
+                  throw new ValidationError(
+                    `${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} values must not be empty`
+                  );
+                }
               }
 
               if (action === SUB_COMMANDS.TRANSLATIONS.UPLOAD) {
@@ -278,8 +316,16 @@ export function createYargsParser() {
               'Download translations by UUID'
             )
             .example(
+              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} f0473723-45f0-4397-b39e-d2bf3d955a20 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} 1fa05e9d-2f31-4ee0-8a72-17a2840d1e32 ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_UUID)} b3384f6a-22a1-4ff3-b1ca-a15d344e7557`,
+              'Download translations for multiple surveys by UUID'
+            )
+            .example(
               `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Customer Feedback"`,
               'Download translations by name'
+            )
+            .example(
+              `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.DOWNLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Customer Feedback" ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.SURVEY_NAME)} "Product Survey"`,
+              'Download translations for multiple surveys by name'
             )
             .example(
               `$0 ${COMMANDS.TRANSLATIONS} ${SUB_COMMANDS.TRANSLATIONS.UPLOAD} ${CLI_OPTIONS.WITH_PREFIX(CLI_OPTIONS.TRANSLATIONS.FILE)}  ./my-translations.xlsx`,

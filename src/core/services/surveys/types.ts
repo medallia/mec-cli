@@ -106,7 +106,7 @@ export interface AlternativeSet {
 }
 
 export interface WhereUsedInfo {
-  location: string;
+  location: string | null; // null = could not be resolved for this survey
   // Available types for survey_program:
   // section, cookie-confirmation, trip-advisor, trip-advisor-external-widget,
   // end-section, text, image, grid, date-picker, media-question, file-upload-question,
@@ -116,8 +116,7 @@ export interface WhereUsedInfo {
   type: string;
 }
 
-export interface WhereUsedMap {
-  get(key: string): WhereUsedInfo;
-  has(key: string): boolean;
-  forEach(fn: (value: WhereUsedInfo, key: string) => void): void;
+export interface WhereUsedAccumulator {
+  locations: Set<string>;
+  type: string;
 }

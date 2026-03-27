@@ -6,6 +6,7 @@ import axios, {
 } from 'axios';
 
 import { log } from '../../../utils';
+import { AuthenticationError } from '../../../utils/errors';
 import { EMOJIS } from '../../config/constants';
 import { Profile } from '../../config/types';
 
@@ -41,7 +42,7 @@ export class RequestInterceptor {
   /**
    * Get valid token, refresh if needed
    */
-  private static async getValidToken(baseURL: string, profile: Profile): Promise<string | null> {
+  private static async getValidToken(baseURL: string, profile: Profile): Promise<string> {
     const tokenData = tokenStore.get(baseURL);
 
     // Check if current token is still valid
@@ -56,7 +57,7 @@ export class RequestInterceptor {
   /**
    * Fetch new OAuth2 token
    */
-  private static async fetchNewToken(baseURL: string, profile: Profile): Promise<string | null> {
+  private static async fetchNewToken(baseURL: string, profile: Profile): Promise<string> {
     try {
       log.info(`${EMOJIS.LOADING} Authenticating...`);
 
@@ -86,11 +87,9 @@ export class RequestInterceptor {
       log.info(`${EMOJIS.SUCCESS} Authentication successful`);
       return access_token;
     } catch (error) {
-      log.error(
-        `${EMOJIS.ERROR} Authentication failed`,
-        error instanceof Error ? error.message : 'Unknown'
-      );
-      return null;
+      const message = error instanceof Error ? error.message : 'Unknown';
+      log.error(`${EMOJIS.ERROR} Authentication failed`, message);
+      throw new AuthenticationError(`Authentication failed: ${message}`);
     }
   }
 

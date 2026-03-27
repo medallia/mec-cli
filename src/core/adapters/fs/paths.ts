@@ -79,6 +79,13 @@ export class PathUtils {
   }
 
   /**
+   * Get the base filename from a path (cross-platform)
+   */
+  static basename(filePath: string): string {
+    return path.basename(filePath);
+  }
+
+  /**
    * Join path segments safely
    */
   static join(...segments: string[]): string {

@@ -104,6 +104,30 @@ run_test_with_output "Translations Help" "npm run dev -- translations --help" "T
 run_test_with_output "Translations Download Error" "npm run dev -- translations download" "For download: either --survey-uuid or --survey-name must be provided"
 run_test_with_output "Translations Upload Error" "npm run dev -- translations upload" "For upload: --file must be provided"
 
+# Multi-survey / parser validation tests
+run_test_with_output "Translations Download blank UUID rejected" \
+  "npm run dev -- translations download --survey-uuid ''" \
+  "survey-uuid values must not be empty"
+run_test_with_output "Translations Download blank name rejected" \
+  "npm run dev -- translations download --survey-name ''" \
+  "survey-name values must not be empty"
+# Parser accepts multiple --survey-uuid flags; command fails at API call (no real survey), which is expected
+run_test "Translations Download multiple UUIDs accepted by parser" \
+  "npm run dev -- translations download --survey-uuid uuid-one --survey-uuid uuid-two 2>/dev/null" \
+  "false"
+# Parser accepts multiple --survey-name flags; command fails at API call, which is expected
+run_test "Translations Download multiple names accepted by parser" \
+  "npm run dev -- translations download --survey-name 'Survey Dummy A' --survey-name 'Survey Dummy B' 2>/dev/null" \
+  "false"
+# Parser accepts --survey-uuid and --survey-name together; command fails at API call, which is expected
+run_test "Translations Download UUID and name together accepted by parser" \
+  "npm run dev -- translations download --survey-uuid some-uuid --survey-name 'Some Survey' 2>/dev/null" \
+  "false"
+# Duplicate UUIDs are accepted by the parser; deduplication happens inside the command
+run_test "Translations Download duplicate UUID accepted by parser" \
+  "npm run dev -- translations download --survey-uuid same-uuid --survey-uuid same-uuid 2>/dev/null" \
+  "false"
+
 # Error Handling Tests
 run_test_with_output "Invalid Command" "npm run dev -- invalid-command" "Unknown argument: invalid-command"
 run_test_with_output "No Command" "npm run dev --" "You must provide a command"

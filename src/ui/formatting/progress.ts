@@ -1,5 +1,6 @@
 import { EMOJIS, UI_SETTINGS } from '../../core/config/constants';
 import { isVerboseEnabled } from '../../utils';
+
 import { Colors } from './colors';
 
 export class ProgressFormatter {
