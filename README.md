@@ -61,6 +61,68 @@ To upgrade to the latest version:
 brew upgrade mec
 ```
 
+<details>
+<summary>Install mec-cli on Windows (via WSL)</summary>
+
+On Windows, `mec-cli` is installed through **WSL** (Windows Subsystem for Linux). WSL gives you a real Linux environment on Windows where the Linux build of `mec-cli` runs natively.
+
+> Linux and macOS users: see the Homebrew install instructions above.
+
+**1. Install WSL** (skip if you already have it)
+
+Open PowerShell **as Administrator** and run:
+
+```powershell
+wsl --install
+```
+
+Reboot when prompted. On first launch you'll be asked to create a Linux username and password. For details and troubleshooting, see [Microsoft's WSL install guide](https://learn.microsoft.com/windows/wsl/install).
+
+**2. Open your WSL shell**
+
+Press `Win`, type "Ubuntu" (or whichever distro you installed), and hit Enter. You can also launch it from Windows Terminal or by running `wsl` in PowerShell.
+
+Confirm you're inside WSL:
+
+```bash
+uname -a
+# Linux ... microsoft-standard-WSL2 ...
+```
+
+**3. Install mec-cli**
+
+Run these commands inside your WSL shell:
+
+```bash
+# Download the mec-cli tarball
+wget https://github.com/medallia/mec-cli/releases/latest/download/mec-linux-x64.tgz
+
+# Extract the tarball
+tar -xzf mec-linux-x64.tgz
+
+# Make the binary executable
+chmod +x mec-linux-x64
+
+# Verify the binary works
+./mec-linux-x64 --version
+
+# Move the binary to a directory in PATH
+sudo mv ./mec-linux-x64 /usr/local/bin/
+
+# Create a simpler symlink 'mec' for easy use
+sudo ln -s /usr/local/bin/mec-linux-x64 /usr/local/bin/mec
+
+# Verify the symlinked command works
+mec --version
+```
+
+**Notes**
+- `mec` is only available inside your WSL shell, not in PowerShell or CMD.
+- Run `mec` from the same Linux distro you installed it into.
+- Git Bash, MSYS2, and Cygwin are not supported — they can't execute the Linux binary.
+
+</details>
+
 ### Developer Installation
 
 **Prerequisites:**
